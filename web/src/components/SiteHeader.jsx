@@ -18,10 +18,53 @@ export default function SiteHeader() {
   const { user } = useAuth();
   const [drawer, setDrawer] = useState(false);
 
+  // Which in-page section the reader is actually looking at.
+  //
+  // The nav used to compare against `location.hash`, which never updated: the
+  // anchor handler below scrolls with `history.replaceState`, and that changes
+  // the URL without telling react-router, so the pill never moved off Home.
+  // Reading the scroll position instead makes the highlight track the page
+  // whether you clicked the link, scrolled there yourself, or arrived deep-
+  // linked — which is what a marketing nav is expected to do.
+  const [spy, setSpy] = useState(null);
+  const anchors = NAV.filter((i) => i.to.startsWith('/#')).map((i) => i.to.slice(2)).join(',');
+
+  useEffect(() => {
+    if (location.pathname !== '/') { setSpy(null); return undefined; }
+    const ids = anchors.split(',').filter(Boolean);
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      // The last section whose top has crossed just below the sticky header
+      // wins; nothing wins while the hero is still on screen, which is what
+      // keeps "Home" lit at the top of the page.
+      let current = null;
+      for (const id of ids) {
+        const node = document.getElementById(id);
+        if (node && node.getBoundingClientRect().top <= 140) current = id;
+      }
+      // The last section can be too short to ever reach the line, so the
+      // bottom of the document counts as being in it.
+      if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 2 && ids.length) {
+        current = ids[ids.length - 1];
+      }
+      setSpy(current);
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
+    read();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [location.pathname, anchors]);
+
   const isActive = (item) => (item.end
-    ? location.pathname === '/' && !location.hash
+    ? location.pathname === '/' && !spy
     : item.to.startsWith('/#')
-      ? location.pathname === '/' && location.hash === item.to.slice(1)
+      ? location.pathname === '/' && spy === item.to.slice(2)
       : location.pathname.startsWith(item.to));
 
   // Close the drawer on navigation, on Escape and once the desktop nav takes

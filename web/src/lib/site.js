@@ -7,10 +7,11 @@
 // a neutral name — the assistant is the software, GLS is the campus it serves.
 
 export const PRODUCT = {
-  name: 'Campus Assistant',
-  // The brand mark is a drawn ghost — see components/Logo.jsx. Nothing renders
-  // initials any more; `mark` is kept only as the alt text for the glyph.
-  mark: 'Campus Assistant',
+  name: 'UniNest',
+  // The brand mark is a drawn owl — see components/Logo.jsx (the glyph) and
+  // public/brand/*.webp (the illustrated mascot). Nothing renders initials any
+  // more; `mark` is kept only as the alt text for the glyph.
+  mark: 'UniNest',
   tagline: 'AI knowledge assistant',
   description:
     'Ask a question in plain English and get an answer drawn from your college’s own circulars, timetables and notes — with the document it came from attached.',
@@ -25,6 +26,14 @@ export const NAV = [
 
 /* --------------------------------------------------------- landing content */
 
+// The hero's stacked photographs. Order is back-to-front: the last entry sits
+// on top. `lift` is the vertical offset that gives the stack its curve.
+export const HERO_PHOTOS = [
+  { src: '/img/campus-quad.webp', alt: 'A college quadrangle on a clear day', lift: 0 },
+  { src: '/img/library-hall.webp', alt: 'Reading room shelves under warm lamps', lift: -18 },
+  { src: '/img/study-group.webp', alt: 'Students working together around a table', lift: -6 },
+];
+
 export const HERO_STATS = [
   { value: 3, suffix: '', label: 'Roles, each scoped server-side' },
   { value: 117, suffix: '', label: 'Subjects across 3 branches' },
@@ -36,36 +45,48 @@ export const FEATURES = [
   {
     icon: 'sparkle',
     tone: 'lime',
+    span: 'tall',
+    image: '/img/writing-notes.webp',
+    imageAlt: 'A hand writing notes on ruled paper',
     title: 'Answers you can check',
     body: 'Every document-grounded reply names the circular, the section and the passage it came from. If the corpus does not cover the question, it says so instead of inventing an answer.',
   },
   {
     icon: 'calendar',
     tone: 'lavender',
+    span: 'short',
     title: 'Your timetable, not a generic one',
     body: 'Scoped to your branch, semester and lab batch from your account — so “when is my next lab” has exactly one correct answer.',
   },
   {
     icon: 'chart',
     tone: 'peach',
+    span: 'wide',
+    image: '/img/exam-sheet.webp',
+    imageAlt: 'A pencil resting on an answer sheet',
     title: 'Attendance against the 75% line',
     body: 'Per-subject bars, a term trend and a plain reading of where you stand against the requirement to sit the end-semester exam.',
   },
   {
     icon: 'upload',
     tone: 'sky',
+    span: 'short',
     title: 'Format-aware ingestion',
     body: 'PDF, Word, Excel and PowerPoint are each parsed the right way — slide titles become section headings, spreadsheet tables stay tables.',
   },
   {
     icon: 'layers',
     tone: 'lime',
+    span: 'tall',
+    image: '/img/books-color.webp',
+    imageAlt: 'A student pulling a book from a library shelf',
     title: 'Question banks from your own material',
     body: 'Faculty turn a lecture deck into a draft paper, review every question, and publish only what they approve.',
   },
   {
     icon: 'shield',
     tone: 'lavender',
+    span: 'short',
     title: 'Versioned and role-scoped',
     body: 'A new circular retires the one it replaces, so nothing stale is ever quoted — and no student can reach another student’s record.',
   },
@@ -115,6 +136,8 @@ export const AUDIENCES = [
   {
     icon: 'user',
     tone: 'lime',
+        image: '/img/student-laptop.webp',
+    imageAlt: 'A student working at a laptop',
     role: 'Students',
     body: 'One place for the timetable, attendance, results, assignments and every notice that applies to your semester.',
     points: ['Ask and get a cited answer', 'Submit work in any format', 'See the 75% line clearly'],
@@ -122,6 +145,8 @@ export const AUDIENCES = [
   {
     icon: 'users',
     tone: 'lavender',
+        image: '/img/lecture-talk.webp',
+    imageAlt: 'A lecturer presenting to a seated audience',
     role: 'Faculty',
     body: 'Publish once and let the assistant answer the same question a hundred times, correctly scoped to who is asking.',
     points: ['Upload notes and circulars', 'Grade with feedback', 'Draft question banks'],
@@ -129,28 +154,15 @@ export const AUDIENCES = [
   {
     icon: 'shield',
     tone: 'peach',
+        image: '/img/campus-arch.webp',
+    imageAlt: 'The arched entrance to a college campus',
     role: 'Administration',
     body: 'Map faculty to subjects, manage cohorts, and schedule announcements to appear at the moment they matter.',
     points: ['Subject and faculty mapping', 'Scheduled notices', 'Cohort-wide reporting'],
   },
 ];
 
-export const TESTIMONIALS = [
-  {
-    quote:
-      'I used to ask three people before finding out whether a re-exam form was still open. Now I ask once and get the circular that says so.',
-    name: 'Ayaan Vyas',
-    detail: 'Computer Engineering · Semester 5',
-    image: '/images/student-1.jpg',
-  },
-  {
-    quote:
-      'The same five questions arrived in my inbox every week. I upload the notes once and the assistant answers them — with the page it read.',
-    name: 'Dr. Anjali Mehta',
-    detail: 'Faculty · Computer Engineering',
-    image: '/images/faculty-1.jpg',
-  },
-];
+export const CTA_PHOTO = { src: '/img/campus-tower.webp', alt: 'A university clocktower against a blue sky' };
 
 /* -------------------------------------------------------- GLS University --- */
 

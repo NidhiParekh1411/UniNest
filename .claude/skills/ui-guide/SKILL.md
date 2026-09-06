@@ -1,9 +1,9 @@
 ---
 name: ui-guide
-description: Design system for the Campus Assistant — tokens, typography, component rules, motion and responsive behaviour. Invoke before writing or editing ANY frontend file under web/src, before adding a screen or component, and before choosing any colour, font size, spacing value, or breakpoint. Also use when a UI change "looks off" and you need the canonical rule.
+description: Design system for the UniNest — tokens, typography, component rules, motion and responsive behaviour. Invoke before writing or editing ANY frontend file under web/src, before adding a screen or component, and before choosing any colour, font size, spacing value, or breakpoint. Also use when a UI change "looks off" and you need the canonical rule.
 ---
 
-# Campus Assistant — UI System
+# UniNest — UI System
 
 Full rationale lives in `docs/UI_GUIDE.md`. This is the working checklist.
 

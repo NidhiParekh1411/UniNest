@@ -45,8 +45,8 @@
    headline. It is a background, so the text stays full-contrast ink. */
 .mark {
   background: var(--lime);
-  padding: 0 0.14em;
-  border-radius: 6px;
+  padding: 0.04em 0.16em 0.1em;
+  border-radius: 8px;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
@@ -444,21 +444,62 @@
   min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: var(--s6) var(--s4) var(--s7);
+  padding: var(--s4);
   background: var(--bg);
 }
-.auth-shell { width: 100%; max-width: 460px; display: grid; gap: var(--s5); }
-.auth-card {
+/* The whole screen is one rounded slab holding two panels, in the manner of
+   college_ref(6) and (7): the brand and the promise on the left, the work on
+   the right. One column below 900px, where the aside becomes a banner. */
+.auth-split {
+  width: 100%;
+  max-width: 1080px;
+  display: grid;
+  grid-template-columns: 1fr;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-xl);
-  padding: var(--s6) var(--s5);
+  border-radius: var(--r-2xl);
+  overflow: hidden;
 }
-.auth-card-head { text-align: center; margin-bottom: var(--s5); }
-.auth-card-head .brand { justify-content: center; }
-.auth-card-head .brand-text { align-items: flex-start; }
-.auth-title { font-size: var(--fs-xl); font-weight: 800; letter-spacing: -0.03em; margin-top: var(--s5); }
-.auth-lede { color: var(--text-2); font-size: var(--fs-sm); margin: var(--s2) 0 0; }
+
+.auth-aside {
+  position: relative;
+  display: flex; flex-direction: column;
+  padding: var(--s5);
+  min-height: 200px;
+  color: var(--ink);
+  /* The one full-bleed gradient in the product. Every stop is mixed from the
+     four pastel families, so it cannot introduce a colour the palette does
+     not already have. */
+  background: var(--grad-sand);
+}
+.auth-aside .brand-name { color: var(--ink); }
+.auth-aside .brand-sub { color: var(--text-2); }
+.auth-aside .logo { color: var(--ink); }
+.auth-aside-art {
+  width: min(100%, 300px);
+  height: auto;
+  margin: var(--s5) auto 0;
+  filter: drop-shadow(0 18px 34px rgb(32 33 36 / 0.16));
+}
+.auth-aside-foot { margin-top: auto; padding-top: var(--s6); }
+.auth-aside-title {
+  font-size: var(--fs-2xl);
+  font-weight: 800; letter-spacing: -0.035em; line-height: 1.15;
+  max-width: 16ch;
+}
+/* On a phone the aside is a banner: brand and mascot only, so the form is
+   still the first thing in reach. */
+.auth-aside-foot { display: none; }
+
+.auth-main { padding: var(--s6) var(--s5); display: grid; align-content: center; }
+.auth-card { width: 100%; max-width: 420px; margin-inline: auto; }
+.auth-card-head { margin-bottom: var(--s5); }
+.auth-title { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.03em; }
+.auth-lede { color: var(--text-2); font-size: var(--fs-sm); margin: var(--s3) 0 0; line-height: 1.6; }
+.auth-fineprint {
+  margin: var(--s5) 0 0;
+  font-size: var(--fs-xs); color: var(--text-3); text-align: center; line-height: 1.6;
+}
 .auth-form { display: flex; flex-direction: column; gap: var(--s4); }
 .auth-switch { margin: var(--s5) 0 0; font-size: var(--fs-sm); color: var(--text-3); text-align: center; }
 .auth-switch a { font-weight: 700; color: var(--text); border-bottom: 1.5px solid var(--border-strong); }
@@ -515,13 +556,15 @@
 .demo-account-note { font-size: var(--fs-xs); color: var(--text-3); }
 .demo-account-go { color: var(--text-3); flex-shrink: 0; }
 
-.auth-points { display: grid; gap: var(--s2); }
+.auth-points { display: grid; gap: var(--s2); list-style: none; padding: 0; margin: var(--s5) 0 0; }
 .auth-point {
   display: flex; align-items: flex-start; gap: var(--s3);
   padding: var(--s4);
   border-radius: var(--r);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  /* Translucent, so the wash behind it stays visible and the card reads as
+     sitting on the gradient rather than punched out of it. */
+  background: rgb(255 255 255 / 0.62);
+  border: 1px solid rgb(255 255 255 / 0.8);
 }
 .auth-point-icon {
   width: 34px; height: 34px; border-radius: var(--r-sm); flex-shrink: 0;
@@ -1058,8 +1101,13 @@
 .hero-grid { display: grid; gap: var(--s7); align-items: center; }
 .hero-title {
   font-size: var(--fs-hero);
-  font-weight: 800; letter-spacing: -0.04em; line-height: 1.04;
-  margin-top: var(--s5);
+  font-weight: 800; letter-spacing: -0.04em;
+  /* The highlighter behind "answered from the source" paints a box the height
+     of the text's content area. At 1.04 that box is taller than the line, so
+     consecutive lines overlapped and the phrase sat under its own background.
+     1.18 clears it with room for the highlighter's vertical padding. */
+  line-height: 1.18;
+  margin-top: 0;
 }
 .hero-lede { font-size: var(--fs-lede); color: var(--text-2); margin-top: var(--s5); max-width: 48ch; line-height: 1.65; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s6); }
@@ -1100,42 +1148,152 @@
    ordered above the copy on a phone if that ever reads better; today it is
    simply the second grid cell. */
 .hero-copy { min-width: 0; }
-.hero-demo { min-width: 0; }
+.hero-art { min-width: 0; }
+
+/* --- the fanned photo stack --------------------------------------------
+   Three prints laid down at slight angles along an arc. Absolutely
+   positioned inside a ratio box so the container reserves its own height and
+   the page does not reflow as the images decode. */
+
+.fan {
+  position: relative;
+  aspect-ratio: 5 / 4;
+  max-width: 520px;
+  margin-inline: auto;
+}
+.fan-card {
+  position: absolute;
+  margin: 0;
+  width: 72%;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--surface);
+  border: 6px solid var(--surface);
+  box-shadow: var(--shadow-md);
+}
+.fan-card img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 4 / 3; }
+/* Back to front. The rotations are deliberately unequal — a fan with even
+   spacing reads as a CSS trick rather than as prints on a table. */
+.fan-1 { top: 0; left: 0; transform: rotate(-7deg); }
+.fan-2 { top: 14%; right: 0; transform: rotate(6deg); }
+.fan-3 { bottom: 0; left: 12%; transform: rotate(-2deg); }
+.fan-owl {
+  position: absolute;
+  right: -2%; bottom: -4%;
+  width: clamp(66px, 18%, 104px); height: auto;
+  filter: drop-shadow(0 10px 22px rgb(32 33 36 / 0.18));
+}
+
+/* --- the worked example ------------------------------------------------- */
+
+.proof {
+  display: grid; gap: var(--s6);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2xl);
+  padding: var(--s6) var(--s5);
+}
+.proof-side { align-self: center; }
+.proof-title { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.03em; margin-top: var(--s3); line-height: 1.2; }
+.proof-body { font-size: var(--fs-sm); color: var(--text-2); margin: var(--s4) 0 0; line-height: 1.7; max-width: 44ch; }
+.proof .demo { background: var(--bg); border-color: transparent; }
 
 /* --- numbered steps ----------------------------------------------------- */
 
 .step-grid { display: grid; grid-template-columns: 1fr; gap: var(--s4); }
 .step {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--tone-soft, var(--surface));
+  border: 1px solid var(--tone, var(--border));
   border-radius: var(--r-lg);
   padding: var(--s5);
   height: 100%;
 }
+/* Inside the ribbon each card is a fixed slab — a marquee cannot use
+   percentage widths, because the track has no width of its own. */
+.marquee .step { width: 300px; min-height: 210px; }
 .step-index {
   display: inline-grid; place-items: center;
   min-width: 32px; height: 32px; padding: 0 9px;
   border-radius: var(--r-full);
-  background: var(--surface-2);
+  background: var(--tone, var(--surface-2));
   font-size: var(--fs-xs); font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: var(--text-2);
+  color: var(--tone-ink, var(--text-2));
   margin-bottom: var(--s4);
 }
 .step-title { font-size: var(--fs-lg); font-weight: 800; letter-spacing: -0.025em; }
 .step-body { font-size: var(--fs-sm); color: var(--text-2); margin: var(--s2) 0 0; line-height: 1.65; }
 
+/* --- the marquee ribbon -------------------------------------------------
+   The track holds its children twice and slides to -50%, so the loop is
+   seamless without measuring anything. `min-width: max-content` is what stops
+   flex from shrinking the copies to fit — without it the two halves are not
+   the same width and the seam jumps. */
+
+.marquee {
+  position: relative;
+  overflow: hidden;
+  padding-block: var(--s2);
+  /* The strip dissolves into the ground at both ends rather than being cut
+     off by a hard edge. mask, not an overlay, so it works on any background. */
+  -webkit-mask-image: var(--fade-x-bg);
+  mask-image: var(--fade-x-bg);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  min-width: max-content;
+  gap: var(--s4);
+  padding-inline: var(--s4);
+  animation: marquee var(--marquee-duration, 46s) linear infinite;
+  will-change: transform;
+}
+.marquee-reverse { animation-direction: reverse; }
+.marquee-item { display: flex; }
+/* Stop it for anyone who wants to read a card, by pointer or by keyboard. */
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* The global reduce rule forces every animation to one iteration, which
+     would leave the track parked at -50%. Drop the animation outright and let
+     the ribbon be an ordinary scroller instead. */
+  .marquee { overflow-x: auto; scrollbar-width: none; }
+  .marquee::-webkit-scrollbar { display: none; }
+  .marquee-track { animation: none !important; }
+}
+
 /* --- feature blocks ----------------------------------------------------- */
 
 .feature-grid { display: grid; grid-template-columns: 1fr; gap: var(--s4); }
+
+/* A pinboard rather than a table of equal cells: three of the six blocks
+   carry a photograph and claim extra rows, which is what stops the section
+   reading as six identical boxes. One column on a phone, where a staggered
+   grid has nothing to stagger against. */
+.mason { display: grid; grid-template-columns: 1fr; gap: var(--s4); }
+.mason-cell { min-width: 0; }
+.mason-cell > .feature { height: 100%; }
+
 .feature {
+  display: flex; flex-direction: column;
   background: var(--tone-soft, var(--bg));
   border-radius: var(--r-lg);
-  padding: var(--s5);
+  overflow: hidden;
   height: 100%;
 }
+.feature-text { padding: var(--s5); }
+.feature-photo {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  /* The pastel shows through the photograph just enough to tie it to the
+     block's category without tinting it into a filter effect. */
+  background: var(--tone);
+}
+.mason-tall .feature-photo { aspect-ratio: 4 / 5; }
 .feature-icon {
-  width: 42px; height: 42px; border-radius: var(--r-sm);
+  width: 38px; height: 38px; border-radius: var(--r-sm);
   background: var(--tone, var(--surface-2));
   color: var(--tone-ink, var(--text-2));
   display: grid; place-items: center;
@@ -1148,11 +1306,19 @@
 
 .aud-grid { display: grid; grid-template-columns: 1fr; gap: var(--s4); }
 .aud {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: var(--s5);
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  border-radius: var(--r-xl);
+  overflow: hidden;
   height: 100%;
+}
+.aud-photo {
+  width: 100%; aspect-ratio: 16 / 9; object-fit: cover;
+  background: var(--tone);
+}
+.aud-text {
+  padding: var(--s5);
+  display: flex; flex-direction: column; flex: 1;
   border-top: 5px solid var(--tone, var(--border));
 }
 .aud-icon {
@@ -1164,7 +1330,7 @@
 }
 .aud-role { font-size: var(--fs-xl); font-weight: 800; letter-spacing: -0.03em; }
 .aud-body { font-size: var(--fs-sm); color: var(--text-2); margin: var(--s3) 0 0; line-height: 1.65; }
-.aud-points { list-style: none; padding: 0; margin: var(--s5) 0 0; display: grid; gap: var(--s3); }
+.aud-points { list-style: none; padding: 0; margin: auto 0 0; padding-top: var(--s5); display: grid; gap: var(--s3); }
 .aud-point {
   display: flex; align-items: center; gap: var(--s3);
   font-size: var(--fs-sm);
@@ -1175,13 +1341,15 @@
 /* --- CTA ---------------------------------------------------------------- */
 
 .cta {
+  display: grid;
   border-radius: var(--r-2xl);
   background: var(--ink);
   color: var(--on-ink);
-  padding: var(--s8) var(--s5);
-  text-align: center;
+  overflow: hidden;
 }
-.cta-title { font-size: var(--fs-section); font-weight: 800; letter-spacing: -0.035em; line-height: 1.1; max-width: 20ch; margin-inline: auto; }
+.cta-photo { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.cta-body { padding: var(--s7) var(--s5); text-align: center; }
+.cta-title { font-size: var(--fs-section); font-weight: 800; letter-spacing: -0.035em; line-height: 1.12; max-width: 20ch; margin-inline: auto; }
 .cta-lede { color: var(--on-ink-2); margin: var(--s4) auto 0; font-size: var(--fs-lede); max-width: 46ch; line-height: 1.6; }
 .cta-actions { display: flex; flex-wrap: wrap; gap: var(--s3); justify-content: center; margin-top: var(--s6); }
 
@@ -1394,10 +1562,14 @@
   .page-title { font-size: var(--fs-3xl); }
   .footer-bottom { flex-direction: row; justify-content: space-between; align-items: center; }
   .prog { grid-template-columns: 52px 1fr; }
-  .auth-points { grid-template-columns: 1fr 1fr; }
-  .auth-shell { max-width: 720px; }
-  .auth-card { max-width: 460px; margin-inline: auto; }
-  .cta { padding: var(--s9) var(--s7); }
+  .cta-body { padding: var(--s8) var(--s7); }
+
+  /* True masonry, by columns rather than grid: the cells keep their natural
+     heights and flow down each column, so nothing is clipped and nothing has
+     to be measured. Grid cannot do this without fixed row heights. */
+  .mason { display: block; column-count: 2; column-gap: var(--s4); }
+  .mason-cell { display: block; break-inside: avoid; margin-bottom: var(--s4); }
+  .mason-cell > .feature { height: auto; }
 }
 
 @media (min-width: 900px) {
@@ -1407,6 +1579,19 @@
   .footer-grid { grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: var(--s7); }
   .step-grid, .feature-grid, .aud-grid, .acc-grid, .contact-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .path-steps { gap: var(--s7); }
+  .mason { column-count: 3; }
+  .auth { padding: var(--s6); }
+  .auth-split { grid-template-columns: 1.02fr 1fr; min-height: min(760px, calc(100dvh - var(--s7))); }
+  .auth-aside { padding: var(--s7); }
+  .auth-aside-art { width: min(100%, 380px); margin-top: var(--s6); }
+  .auth-aside-foot { display: block; }
+  .auth-main { padding: var(--s7); }
+  .proof { grid-template-columns: 0.9fr 1.1fr; padding: var(--s7); gap: var(--s7); }
+  .cta { grid-template-columns: 1fr 1.15fr; align-items: stretch; }
+  .cta-photo { height: 100%; aspect-ratio: auto; min-height: 340px; }
+  .cta-body { text-align: left; padding: var(--s8) var(--s7); }
+  .cta-title, .cta-lede { margin-inline: 0; }
+  .cta-actions { justify-content: flex-start; }
 }
 
 /* The app rail arrives at 960px, later than the site nav: it costs 252px, and

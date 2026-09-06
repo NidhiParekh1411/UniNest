@@ -5,9 +5,14 @@
    See docs/UI_GUIDE.md for the reasoning behind each group.
 
    Direction (Sep 2026, from screenshots/college_ref(1)–(3)):
-   flat pastel blocks on a warm-grey ground. No gradients anywhere. One
-   typeface — Manrope. Colour is used to *classify* (four pastel families),
-   never to decorate; emphasis comes from ink-black fills and generous space.
+   flat pastel blocks on a warm-grey ground. One typeface — Manrope. Colour is
+   used to *classify* (four pastel families), never to decorate; emphasis comes
+   from ink-black fills and generous space.
+
+   Revised (Sep 2026, from college_ref(8)–(10)): gradients are permitted again,
+   but only as the large atmospheric washes defined under "atmospheric washes"
+   below — behind a panel, never on one. Surfaces, buttons, borders and text
+   stay flat.
    =========================================================================== */
 
 :root {
@@ -75,6 +80,34 @@
   /* A crisp two-ring focus indicator. Lime is too light to be a focus ring
      on its own, so the ring is ink with a page-coloured gap. */
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink);
+
+  /* --- atmospheric washes -----------------------------------------------
+     Gradients are allowed in exactly one role: a large, soft, out-of-focus
+     wash *behind* a surface — the sign-in panel, the bloom under the chat
+     composer, the marquee's edge fades. They are never a button, a card, a
+     border or text. Every stop is mixed from the four pastel families, so a
+     wash cannot introduce a colour the palette does not already have.
+
+     They read as light rather than as paint, which is why they sit under
+     content without competing with it. If a gradient is small enough that you
+     can see where it starts and stops, it is being used wrongly.            */
+  --grad-sand:
+    radial-gradient(120% 90% at 18% 6%, #fff3dc 0%, rgb(255 243 220 / 0) 58%),
+    radial-gradient(100% 80% at 88% 14%, var(--lavender-soft) 0%, rgb(247 237 255 / 0) 55%),
+    radial-gradient(140% 100% at 50% 108%, var(--lime) 0%, #eaf6d4 34%, rgb(245 245 244 / 0) 72%),
+    linear-gradient(168deg, #fffdf8 0%, #f7f6f1 100%);
+  --grad-aurora:
+    radial-gradient(90% 62% at 50% 118%, var(--lime) 0%, rgb(218 243 159 / 0.42) 34%, rgb(218 243 159 / 0) 68%),
+    radial-gradient(64% 50% at 12% 112%, var(--sky-2) 0%, rgb(163 214 240 / 0) 62%),
+    radial-gradient(64% 52% at 88% 114%, var(--lavender-2) 0%, rgb(217 179 255 / 0) 60%);
+  --grad-dusk:
+    radial-gradient(90% 70% at 20% 0%, #33363c 0%, rgb(51 54 60 / 0) 60%),
+    radial-gradient(80% 60% at 92% 8%, #2a2d33 0%, rgb(42 45 51 / 0) 58%),
+    linear-gradient(180deg, var(--ink-2) 0%, var(--ink) 100%);
+  /* Edge fades for horizontally scrolling strips — the track dissolves into
+     the ground instead of being cut off by a hard border. */
+  --fade-x-bg: linear-gradient(90deg, var(--bg) 0%, rgb(245 245 244 / 0) 8%, rgb(245 245 244 / 0) 92%, var(--bg) 100%);
+  --fade-x-surface: linear-gradient(90deg, var(--surface) 0%, rgb(255 255 255 / 0) 8%, rgb(255 255 255 / 0) 92%, var(--surface) 100%);
 
   /* --- semantic --------------------------------------------------------- */
   --ok: #2f7a4d;
@@ -199,6 +232,16 @@ img { max-width: 100%; display: block; }
 @keyframes popIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 @keyframes bounce { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
+
+/* The one looping animation in the system. A marquee is legitimate for a strip
+   that is explicitly a moving ribbon of content; it is not legitimate as
+   decoration on a static block. It pauses on hover and on focus-within so a
+   reader can stop it, and stops entirely under reduced-motion. */
+@keyframes marquee { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+
+/* Staggered entrance for a list that appears as a group — the assistant's
+   suggestion chips. Each child sets its own --i. */
+@keyframes riseInSoft { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 /* Scroll-reveal. Elements start hidden and are released by Reveal.jsx adding
    .is-visible, so nothing animates until it actually enters the viewport. */

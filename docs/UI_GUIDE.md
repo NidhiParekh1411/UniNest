@@ -1,4 +1,4 @@
-# UI Guide — Campus Assistant
+# UI Guide — UniNest
 
 The design system, and why each rule exists. The canonical values live in
 `web/src/styles/theme.css`; this file explains them. If the two disagree, the
