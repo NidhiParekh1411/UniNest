@@ -40,7 +40,8 @@ function AttendanceCard({ subject, index }) {
     <SubjectCard
       index={index}
       title={subject.subject}
-      meta={<><span className="mono">{subject.code}</span>{subject.faculty ? ` · ${subject.faculty}` : ''}</>}
+      code={subject.code}
+      meta={subject.faculty}
       badge={<Badge tone={tone}>{subject.percent}%</Badge>}
     >
       <div className="subject-card-meter">

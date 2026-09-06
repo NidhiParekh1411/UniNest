@@ -10,6 +10,10 @@ import Icon from './Icon.jsx';
  * The pastel is not decoration — it cycles through the four families in a
  * stable order so the same subject keeps the same colour everywhere it
  * appears, which is what makes the row scannable rather than merely colourful.
+ *
+ * It is a rail down the edge of a white card rather than a fill, though. Five
+ * pastel-filled cards on a warm-grey page turn every screen into the same
+ * screen; the colour has to be enough to tell two subjects apart and no more.
  */
 
 const TONES = ['peach', 'lavender', 'lime', 'sky'];
@@ -70,14 +74,23 @@ export function CourseMeter({ value, label }) {
  * Two screens show a per-subject block — attendance and results — and both
  * want the subject's pastel for identity with its status colour reserved for
  * the badge. Only the body differs, so the body is a child.
+ *
+ * `code` is separate from `meta` because it is the one thing on the card that
+ * carries the subject's tint, and a caller passing it inside a formatted meta
+ * string could not be given that treatment.
  */
-export function SubjectCard({ index, title, meta, badge, children }) {
+export function SubjectCard({ index, title, code, meta, badge, children }) {
   return (
     <article className={`subject-card tone-${toneFor(index)}`}>
       <header className="subject-card-head">
         <div className="grow" style={{ minWidth: 0 }}>
           <h3 className="subject-card-title">{title}</h3>
-          {meta && <p className="subject-card-meta">{meta}</p>}
+          {(code || meta) && (
+            <p className="subject-card-meta">
+              {code && <span className="subject-code">{code}</span>}
+              {meta && <span>{meta}</span>}
+            </p>
+          )}
         </div>
         {badge}
       </header>

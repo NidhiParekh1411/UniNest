@@ -3,7 +3,7 @@ import api from '../lib/api.js';
 import { useApi } from '../lib/useApi.js';
 import { useToast } from '../lib/toast.jsx';
 import Icon from '../components/Icon.jsx';
-import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, PageHead, SkeletonList, Table, Tabs } from '../components/ui.jsx';
+import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, PageHead, Refreshed, SkeletonList, Table, Tabs } from '../components/ui.jsx';
 import { BRANCHES, BRANCH_NAMES, SEMESTERS, formatDate, initials } from '../lib/format.js';
 
 function CreateModal({ onClose, onDone }) {
@@ -198,7 +198,7 @@ export default function People() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
 
-  const { data, error, loading, refetch } = useApi(
+  const { data, error, loading, version, refetch } = useApi(
     () => api.users({ role, branch, semester, q }),
     [role, branch, semester, q],
   );
@@ -249,52 +249,54 @@ export default function People() {
       {error && <ErrorNote onRetry={refetch}>{error}</ErrorNote>}
 
       {!loading && !error && (
-        <Card flush>
-          <Table
-            keyOf={(r) => r.id}
-            columns={[
-              {
-                key: 'name',
-                header: 'Name',
-                render: (u) => (
-                  <span className="row" style={{ gap: 'var(--s3)' }}>
-                    <span className="avatar">{initials(u.name)}</span>
-                    <span>
-                      <span className="cell-strong">{u.name}</span><br />
-                      <span className="dim" style={{ fontSize: 'var(--fs-xs)' }}>{u.email}</span>
+        <Refreshed token={version}>
+          <Card flush>
+            <Table
+              keyOf={(r) => r.id}
+              columns={[
+                {
+                  key: 'name',
+                  header: 'Name',
+                  render: (u) => (
+                    <span className="row" style={{ gap: 'var(--s3)' }}>
+                      <span className="avatar">{initials(u.name)}</span>
+                      <span>
+                        <span className="cell-strong">{u.name}</span><br />
+                        <span className="dim" style={{ fontSize: 'var(--fs-xs)' }}>{u.email}</span>
+                      </span>
                     </span>
-                  </span>
-                ),
-              },
-              {
-                key: 'detail',
-                header: role === 'student' ? 'Class' : 'Department',
-                render: (u) => (role === 'student'
-                  ? <span>{u.branch} · Sem {u.semester}{u.division ? ` · ${u.division}` : ''}<br /><span className="mono dim">{u.enrollment}</span></span>
-                  : <span>{u.department}<br /><span className="dim" style={{ fontSize: 'var(--fs-xs)' }}>{u.designation ?? '—'}</span></span>),
-              },
-              ...(role === 'faculty' ? [{ key: 'subjectCount', header: 'Subjects', align: 'right', render: (u) => <Badge tone="accent">{u.subjectCount}</Badge> }] : []),
-              { key: 'joinedAt', header: 'Since', align: 'right', render: (u) => <span className="dim">{formatDate(u.joinedAt, { month: 'short', year: 'numeric' })}</span> },
-              {
-                key: 'actions',
-                header: '',
-                align: 'right',
-                render: (u) => (
-                  <span className="row" style={{ gap: 2, justifyContent: 'flex-end' }}>
-                    <Button size="sm" variant="ghost" className="btn-icon" onClick={() => setEditing(u)} aria-label={`Edit ${u.name}`}>
-                      <Icon name="edit" size={15} />
-                    </Button>
-                    <Button size="sm" variant="ghost" className="btn-icon" onClick={() => remove(u)} aria-label={`Remove ${u.name}`}>
-                      <Icon name="trash" size={15} />
-                    </Button>
-                  </span>
-                ),
-              },
-            ]}
-            rows={users}
-            empty={<EmptyState icon="users" title="No accounts match" body="Try a different filter or search term." />}
-          />
-        </Card>
+                  ),
+                },
+                {
+                  key: 'detail',
+                  header: role === 'student' ? 'Class' : 'Department',
+                  render: (u) => (role === 'student'
+                    ? <span>{u.branch} · Sem {u.semester}{u.division ? ` · ${u.division}` : ''}<br /><span className="mono dim">{u.enrollment}</span></span>
+                    : <span>{u.department}<br /><span className="dim" style={{ fontSize: 'var(--fs-xs)' }}>{u.designation ?? '—'}</span></span>),
+                },
+                ...(role === 'faculty' ? [{ key: 'subjectCount', header: 'Subjects', align: 'right', render: (u) => <Badge tone="accent">{u.subjectCount}</Badge> }] : []),
+                { key: 'joinedAt', header: 'Since', align: 'right', render: (u) => <span className="dim">{formatDate(u.joinedAt, { month: 'short', year: 'numeric' })}</span> },
+                {
+                  key: 'actions',
+                  header: '',
+                  align: 'right',
+                  render: (u) => (
+                    <span className="row" style={{ gap: 2, justifyContent: 'flex-end' }}>
+                      <Button size="sm" variant="ghost" className="btn-icon" onClick={() => setEditing(u)} aria-label={`Edit ${u.name}`}>
+                        <Icon name="edit" size={15} />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="btn-icon" onClick={() => remove(u)} aria-label={`Remove ${u.name}`}>
+                        <Icon name="trash" size={15} />
+                      </Button>
+                    </span>
+                  ),
+                },
+              ]}
+              rows={users}
+              empty={<EmptyState icon="users" title="No accounts match" body="Try a different filter or search term." />}
+            />
+          </Card>
+        </Refreshed>
       )}
 
       {creating && <CreateModal onClose={() => setCreating(false)} onDone={refetch} />}

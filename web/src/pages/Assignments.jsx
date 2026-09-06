@@ -4,7 +4,7 @@ import { useApi } from '../lib/useApi.js';
 import { useAuth } from '../lib/auth.jsx';
 import { useToast } from '../lib/toast.jsx';
 import FilePicker from '../components/FilePicker.jsx';
-import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, Note, PageHead, SkeletonList, Table, Tabs } from '../components/ui.jsx';
+import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, Note, PageHead, Refreshed, SkeletonList, Table, Tabs } from '../components/ui.jsx';
 import { formatDate, relative, FILE_LABELS } from '../lib/format.js';
 
 /* ---------------------------------------------------------------- student */
@@ -336,7 +336,7 @@ function FacultyAssignments({ data, refetch }) {
 
 export default function Assignments() {
   const { isStudent } = useAuth();
-  const { data, error, loading, refetch } = useApi(() => api.assignments(), []);
+  const { data, error, loading, version, refetch } = useApi(() => api.assignments(), []);
 
   return (
     <div className="content">
@@ -349,9 +349,11 @@ export default function Assignments() {
       {loading && <Card><SkeletonList rows={5} /></Card>}
       {error && <ErrorNote onRetry={refetch}>{error}</ErrorNote>}
       {!loading && !error && data && (
-        isStudent
-          ? <StudentAssignments data={data} refetch={refetch} />
-          : <FacultyAssignments data={data} refetch={refetch} />
+        <Refreshed token={version}>
+          {isStudent
+            ? <StudentAssignments data={data} refetch={refetch} />
+            : <FacultyAssignments data={data} refetch={refetch} />}
+        </Refreshed>
       )}
     </div>
   );

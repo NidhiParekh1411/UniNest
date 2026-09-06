@@ -452,22 +452,19 @@
 .auth {
   min-height: 100dvh;
   display: grid;
-  place-items: center;
-  padding: var(--s4);
   background: var(--bg);
 }
-/* The whole screen is one rounded slab holding two panels, in the manner of
-   college_ref(6) and (7): the brand and the promise on the left, the work on
-   the right. One column below 900px, where the aside becomes a banner. */
+/* Two halves of the window, edge to edge: the brand and the promise on the
+   left, the work on the right, in the manner of college_ref(6) and (7). It was
+   a rounded slab floating in the middle of the page — which meant that on a
+   desktop the screen was mostly empty grey around a card. One column below
+   900px, where the aside becomes a banner. */
 .auth-split {
   width: 100%;
-  max-width: 1080px;
   display: grid;
   grid-template-columns: 1fr;
+  min-height: 100dvh;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-2xl);
-  overflow: hidden;
 }
 
 .auth-aside {
@@ -484,13 +481,21 @@
 .auth-aside .brand-name { color: var(--ink); }
 .auth-aside .brand-sub { color: var(--text-2); }
 .auth-aside .logo { color: var(--ink); }
+/* The brand stays in the corner; everything else is centred in the half, so
+   the owl sits level with the form rather than at the foot of a tall column. */
+.auth-brand { align-self: flex-start; }
+.auth-aside-mid {
+  flex: 1;
+  display: flex; flex-direction: column; justify-content: center;
+  min-height: 0;
+}
 .auth-aside-art {
   width: min(100%, 300px);
   height: auto;
   margin: var(--s5) auto 0;
   filter: drop-shadow(0 18px 34px rgb(32 33 36 / 0.16));
 }
-.auth-aside-foot { margin-top: auto; padding-top: var(--s6); }
+.auth-aside-foot { padding-top: var(--s6); }
 .auth-aside-title {
   font-size: var(--fs-2xl);
   font-weight: 800; letter-spacing: -0.035em; line-height: 1.15;
@@ -616,6 +621,17 @@
 }
 .list-row:last-child { border-bottom: none; }
 .list-row:first-child { padding-top: 0; }
+/* A row that actually goes somewhere. It gains the negative inset so the hover
+   tint reaches past the card's own padding rather than stopping short of it. */
+.list-row-link {
+  color: inherit;
+  margin-inline: calc(var(--s3) * -1);
+  padding-inline: var(--s3);
+  border-radius: var(--r-sm);
+  transition: background var(--t-fast);
+}
+.list-row-link:hover { background: var(--surface-2); }
+.list-row-link:hover .list-title { text-decoration: underline; text-underline-offset: 3px; }
 .list-title { display: block; font-weight: 700; font-size: var(--fs-sm); letter-spacing: -0.01em; }
 .list-meta { display: block; font-size: var(--fs-xs); color: var(--text-3); margin-top: 3px; }
 
@@ -707,6 +723,18 @@
 
 /* a session row */
 .slots { display: flex; flex-direction: column; }
+/* The day's classes live in a pane of fixed height, so moving along the week
+   strip never resizes the card underneath your cursor. Six lectures scroll;
+   one lecture leaves the pane looking deliberately roomy rather than collapsed. */
+.lesson-pane {
+  margin-top: var(--s4);
+  min-height: 288px;
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.lesson-pane > .empty { min-height: 288px; display: grid; align-content: center; }
+
 .slots-flush { padding: 0 var(--s4) var(--s3); }
 .slot {
   position: relative;
@@ -831,6 +859,32 @@
 
 .chat-data { margin-top: var(--s4); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; background: var(--surface); }
 .chat-data-head { padding: var(--s3) var(--s4); background: var(--surface-2); border-bottom: 1px solid var(--border); }
+
+/* A ring per subject, in the assistant's attendance answer. Five progress bars
+   of near-equal length all read as one shape; five rings read as five
+   subjects, each with the number in the middle of it. */
+.ring-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: var(--s3);
+  padding: var(--s4);
+}
+.ring-card {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: var(--s2);
+  padding: var(--s4) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.ring { position: relative; display: grid; place-items: center; flex-shrink: 0; }
+.ring svg { position: absolute; inset: 0; }
+.ring-value { position: relative; font-size: var(--fs-sm); font-weight: 800; letter-spacing: -0.02em; }
+.ring-title {
+  font-size: var(--fs-xs); font-weight: 700; line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ring-meta { font-size: var(--fs-2xs); color: var(--text-3); }
 
 /* Transparent, so the bloom passes behind the composer instead of stopping at
    a hard rule above it. The composer itself stays a solid white block: it is
@@ -1240,6 +1294,12 @@
 .proof-body { font-size: var(--fs-sm); color: var(--text-2); margin: var(--s4) 0 0; line-height: 1.7; max-width: 44ch; }
 .proof .demo { background: var(--bg); border-color: transparent; }
 
+/* Content that was swapped in behind a refresh. See components/ui.jsx —
+   `Refreshed` toggles this class to replay the animation without remounting
+   what it wraps. */
+.swapped { animation: swapIn 300ms var(--ease-out) both; }
+@keyframes swapIn { from { opacity: 0.35; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
 /* --- the step number ---------------------------------------------------
    All that survives of the old numbered-step card: ArcSteps still wants a
    numbered chip, and nothing else did. */
@@ -1264,20 +1324,47 @@
 .section-bar-sub { font-size: var(--fs-sm); color: var(--text-3); margin: 3px 0 0; }
 
 /* --- per-subject cards --------------------------------------------------
-   The pastel is the subject's identity, carried over from the dashboard rail.
-   Status against the 75% line stays on the badge and the meter, which is
-   where a reader actually looks for it. */
+   White, with the subject's colour as a rail down the edge and a tint behind
+   its code. The previous version flooded the whole card with the pastel, and
+   with five subjects on screen that produced five large washes of colour on a
+   warm-grey page — every screen ended up looking like the same screen. Colour
+   is an identifier here, not a surface: enough of it to tell two subjects
+   apart at a glance, not enough to become the design.
+
+   Status against the 75% line stays on the badge and the meter, which is where
+   a reader is actually asking "am I short?". */
 
 .subject-grid { display: grid; grid-template-columns: 1fr; gap: var(--s3); }
 .subject-card {
-  background: var(--tone-soft, var(--surface));
-  border: 1px solid var(--tone, var(--border));
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  padding: var(--s4);
+  padding: var(--s5) var(--s5) var(--s5) calc(var(--s5) + 5px);
+  transition: border-color var(--t);
 }
+.subject-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--tone-edge, var(--border-strong));
+}
+.subject-card:hover { border-color: var(--border-strong); }
 .subject-card-head { display: flex; align-items: flex-start; gap: var(--s3); }
 .subject-card-title { font-size: var(--fs-md); font-weight: 800; letter-spacing: -0.02em; line-height: 1.3; }
-.subject-card-meta { font-size: var(--fs-xs); color: var(--text-2); margin: 3px 0 0; }
+.subject-card-meta { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin: var(--s3) 0 0; font-size: var(--fs-xs); color: var(--text-3); }
+/* The subject code, tinted with the subject's own colour — the one place the
+   pastel is filled in, and small enough that five of them read as a key. */
+.subject-code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs); font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--r-full);
+  background: var(--tone-soft, var(--surface-2));
+  color: var(--tone-ink, var(--text-2));
+}
 .subject-card-meter { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s4); }
 .subject-card-meter > :first-child { flex: 1; }
 .subject-card-count { font-size: var(--fs-xs); color: var(--text-2); white-space: nowrap; }
@@ -1305,31 +1392,47 @@
 .rail-track { display: flex; gap: var(--s3); padding-block: 2px; width: max-content; }
 
 .course {
+  position: relative;
+  overflow: hidden;
   display: flex; flex-direction: column;
-  width: 232px; min-height: 168px;
-  padding: var(--s4);
-  border: none; text-align: left;
+  width: 236px; min-height: 172px;
+  padding: var(--s4) var(--s4) var(--s4) calc(var(--s4) + 5px);
+  text-align: left;
+  border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  background: var(--tone, var(--surface-2));
+  background: var(--surface);
   color: var(--ink);
   scroll-snap-align: start;
-  transition: transform var(--t-fast);
+  transition: transform var(--t-fast), border-color var(--t-fast);
+}
+/* The subject's colour, as a rail rather than a fill — see `.subject-card` for
+   why the pastel is no longer the whole card. */
+.course::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--tone-edge, var(--border-strong));
 }
 button.course { cursor: pointer; }
-@media (hover: hover) { button.course:hover { transform: translateY(-2px); } }
+@media (hover: hover) {
+  button.course:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+}
 
 .course-chip {
   display: inline-flex; align-items: center; gap: 5px;
   align-self: flex-start;
   padding: 4px var(--s2);
   border-radius: var(--r-full);
-  background: rgb(255 255 255 / 0.72);
+  background: var(--tone-soft, var(--surface-2));
+  color: var(--tone-ink, var(--text-2));
+  font-family: var(--font-mono);
   font-size: var(--fs-2xs); font-weight: 700;
   margin-bottom: var(--s4);
 }
 .course-title {
-  font-size: var(--fs-lg); font-weight: 800;
-  letter-spacing: -0.025em; line-height: 1.25;
+  font-size: var(--fs-md); font-weight: 800;
+  letter-spacing: -0.025em; line-height: 1.3;
   /* Two lines, then ellipsis: a long subject name must not change the card's
      height, or the whole rail steps up and down as you scroll it. */
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
@@ -1337,14 +1440,13 @@ button.course { cursor: pointer; }
 }
 .course-meta {
   font-size: var(--fs-xs);
-  color: var(--ink);
-  opacity: 0.66;
+  color: var(--text-3);
   margin-top: var(--s2);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .course-meter { display: flex; align-items: center; gap: var(--s3); margin-top: auto; padding-top: var(--s4); }
-.course-meter-track { flex: 1; height: 7px; border-radius: var(--r-full); background: rgb(255 255 255 / 0.6); overflow: hidden; }
-.course-meter-fill { display: block; height: 100%; border-radius: var(--r-full); background: var(--ink); }
+.course-meter-track { flex: 1; height: 7px; border-radius: var(--r-full); background: var(--surface-2); overflow: hidden; }
+.course-meter-fill { display: block; height: 100%; border-radius: var(--r-full); background: var(--tone-edge, var(--ink)); }
 .course-meter-value { font-size: var(--fs-xs); font-weight: 800; font-variant-numeric: tabular-nums; }
 
 /* --- document viewer ----------------------------------------------------
@@ -1942,11 +2044,13 @@ button.course { cursor: pointer; }
      because two 300px columns are worse than one of each. */
   .viewer-body { grid-template-rows: none; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.85fr); }
   .viewer-side { border-top: 0; border-left: 1px solid var(--border); padding: var(--s5); }
-  .auth { padding: var(--s6); }
-  .auth-split { grid-template-columns: 1.02fr 1fr; min-height: min(760px, calc(100dvh - var(--s7))); }
+  .auth-split { grid-template-columns: 1.02fr 1fr; }
   .auth-aside { padding: var(--s7); }
-  .auth-aside-art { width: min(100%, 380px); margin-top: var(--s6); }
+  .auth-aside-art { width: min(100%, 380px); margin-top: 0; }
   .auth-aside-foot { display: block; }
+  /* Both halves scroll on their own, so a long form never drags the mascot
+     off the top of the window. */
+  .auth-aside, .auth-main { max-height: 100dvh; overflow-y: auto; }
   .auth-main { padding: var(--s7); }
   .proof { grid-template-columns: 0.9fr 1.1fr; padding: var(--s7); gap: var(--s7); }
   .cta { grid-template-columns: 1fr 1.15fr; align-items: stretch; }
@@ -1968,6 +2072,10 @@ button.course { cursor: pointer; }
 }
 
 @media (min-width: 1200px) {
-  .grid-2-aside { grid-template-columns: 1.6fr 1fr; }
+  /* `start`, not the grid default of `stretch`: the two cards in this row are
+     independent, and stretching made "Pending work" grow to match whichever
+     day of "Next lessons" happened to have the most classes — an empty card
+     with 400px of white in it because Tuesday has six lectures. */
+  .grid-2-aside { grid-template-columns: 1.6fr 1fr; align-items: start; }
   .week-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

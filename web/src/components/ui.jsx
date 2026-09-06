@@ -74,6 +74,35 @@ export function EmptyState({ icon = 'inbox', title, body, action }) {
   );
 }
 
+/* Replays a soft entrance whenever `token` changes, without remounting the
+ * children.
+ *
+ * This is the other half of the refresh behaviour in `useApi`: the data is
+ * swapped in place rather than blanked back to a skeleton, and a change with
+ * no transition at all is indistinguishable from nothing having happened. A
+ * remount would animate too, but it would also throw away any state the
+ * subtree holds — an open tab, a scroll position, a half-typed field. Removing
+ * the class, forcing a reflow and adding it back is what restarts a CSS
+ * animation on an element that is staying exactly where it is.
+ */
+export function Refreshed({ token, className = '', children }) {
+  const ref = useRef(null);
+  const first = useRef(true);
+
+  useEffect(() => {
+    // Not on the first render: that content is arriving, not being replaced,
+    // and the page has its own entrance already.
+    if (first.current) { first.current = false; return; }
+    const node = ref.current;
+    if (!node) return;
+    node.classList.remove('swapped');
+    void node.offsetWidth;
+    node.classList.add('swapped');
+  }, [token]);
+
+  return <div ref={ref} className={className}>{children}</div>;
+}
+
 export function Skeleton({ height = 16, width = '100%', style }) {
   return <div className="skeleton" style={{ height, width, ...style }} />;
 }

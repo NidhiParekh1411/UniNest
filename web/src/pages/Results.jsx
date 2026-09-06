@@ -62,7 +62,7 @@ function StudentView({ data }) {
                 key={r.id}
                 index={i}
                 title={r.subject}
-                meta={<span className="mono">{r.code}</span>}
+                code={r.code}
                 badge={<Badge tone={marksTone(r.percent)}>{r.percent}%</Badge>}
               >
                 <div className="subject-card-meter">

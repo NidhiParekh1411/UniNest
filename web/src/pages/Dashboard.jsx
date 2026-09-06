@@ -75,7 +75,10 @@ function NextLessons() {
       action={<Link to="/app/timetable"><Button size="sm" variant="ghost">Full timetable</Button></Link>}
     >
       <WeekStrip value={date} onChange={setDate} countFor={countFor} />
-      <div style={{ marginTop: 'var(--s4)' }}>
+      {/* Fixed height, so moving along the strip never resizes the card — a
+          Tuesday with six lectures used to stretch this panel and, through the
+          grid, the empty "Pending work" card beside it. */}
+      <div className="lesson-pane">
         {loading
           ? <SkeletonList rows={3} />
           : classes.length
@@ -160,13 +163,15 @@ function StudentHome({ data, user }) {
           {data.announcements.length === 0
             ? <EmptyState icon="megaphone" title="No notices right now" body="Announcements for your class will appear here." />
             : data.announcements.map((a) => (
-              <div className="list-row" key={a.id}>
+              /* The row already had a chevron on it, which is a promise that
+                 tapping it goes somewhere. It did not. */
+              <Link className="list-row list-row-link" to="/app/notices" key={a.id}>
                 <span className="grow">
                   <span className="list-title">{a.title}</span>
                   <span className="list-meta">{relative(a.publishAt)}</span>
                 </span>
                 <Icon name="chevron" size={14} className="dim" />
-              </div>
+              </Link>
             ))}
         </Card>
       </div>

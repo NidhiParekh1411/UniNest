@@ -3,7 +3,7 @@ import api from '../lib/api.js';
 import { useApi } from '../lib/useApi.js';
 import { useToast } from '../lib/toast.jsx';
 import Icon from '../components/Icon.jsx';
-import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, PageHead, SkeletonList } from '../components/ui.jsx';
+import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, PageHead, Refreshed, SkeletonList } from '../components/ui.jsx';
 import { relative } from '../lib/format.js';
 
 const BLOOM_TONE = { Remember: 'neutral', Understand: 'accent', Apply: 'warn', Analyse: 'ok' };
@@ -188,7 +188,7 @@ export default function QuestionBanks() {
   const toast = useToast();
   const [generating, setGenerating] = useState(false);
   const [open, setOpen] = useState(null);
-  const { data, error, loading, refetch } = useApi(() => api.questionBanks(), []);
+  const { data, error, loading, version, refetch } = useApi(() => api.questionBanks(), []);
 
   const banks = data?.banks ?? [];
 
@@ -210,41 +210,43 @@ export default function QuestionBanks() {
       {error && <ErrorNote onRetry={refetch}>{error}</ErrorNote>}
 
       {!loading && !error && (
-        banks.length === 0
-          ? (
-            <Card>
-              <EmptyState
-                icon="layers"
-                title="No question banks yet"
-                body="Pick a document you have uploaded and the agent drafts a paper from it — multiple choice, short answers and long answers across Bloom levels."
-                action={<Button variant="primary" icon="sparkle" onClick={() => setGenerating(true)}>Generate one</Button>}
-              />
-            </Card>
-          )
-          : (
-            <div className="stack" style={{ gap: 'var(--s2)' }}>
-              {banks.map((b) => (
-                <Card key={b.id} tight>
-                  <div className="row-between wrap" style={{ alignItems: 'flex-start' }}>
-                    <div className="grow" style={{ minWidth: 220 }}>
-                      <div className="row wrap" style={{ gap: 'var(--s2)', marginBottom: 4 }}>
-                        <span className="list-title">{b.title}</span>
-                        <Badge tone={b.status === 'published' ? 'ok' : 'warn'}>{b.status === 'published' ? 'Published' : 'Draft'}</Badge>
+        <Refreshed token={version}>
+          {banks.length === 0
+            ? (
+              <Card>
+                <EmptyState
+                  icon="layers"
+                  title="No question banks yet"
+                  body="Pick a document you have uploaded and the agent drafts a paper from it — multiple choice, short answers and long answers across Bloom levels."
+                  action={<Button variant="primary" icon="sparkle" onClick={() => setGenerating(true)}>Generate one</Button>}
+                />
+              </Card>
+            )
+            : (
+              <div className="stack" style={{ gap: 'var(--s2)' }}>
+                {banks.map((b) => (
+                  <Card key={b.id} tight>
+                    <div className="row-between wrap" style={{ alignItems: 'flex-start' }}>
+                      <div className="grow" style={{ minWidth: 220 }}>
+                        <div className="row wrap" style={{ gap: 'var(--s2)', marginBottom: 4 }}>
+                          <span className="list-title">{b.title}</span>
+                          <Badge tone={b.status === 'published' ? 'ok' : 'warn'}>{b.status === 'published' ? 'Published' : 'Draft'}</Badge>
+                        </div>
+                        <p className="list-meta">
+                          {b.questionCount} questions · {b.totalMarks} marks
+                          {b.subject ? ` · ${b.subject}` : ''} · {b.author} · {relative(b.createdAt)}
+                        </p>
                       </div>
-                      <p className="list-meta">
-                        {b.questionCount} questions · {b.totalMarks} marks
-                        {b.subject ? ` · ${b.subject}` : ''} · {b.author} · {relative(b.createdAt)}
-                      </p>
+                      <div className="row" style={{ gap: 4 }}>
+                        <Button size="sm" icon="eye" onClick={() => setOpen(b.id)}>Review</Button>
+                        <Button size="sm" variant="ghost" className="btn-icon" onClick={() => remove(b)} aria-label="Delete"><Icon name="trash" size={15} /></Button>
+                      </div>
                     </div>
-                    <div className="row" style={{ gap: 4 }}>
-                      <Button size="sm" icon="eye" onClick={() => setOpen(b.id)}>Review</Button>
-                      <Button size="sm" variant="ghost" className="btn-icon" onClick={() => remove(b)} aria-label="Delete"><Icon name="trash" size={15} /></Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )
+                  </Card>
+                ))}
+              </div>
+            )}
+        </Refreshed>
       )}
 
       {generating && <GenerateModal onClose={() => setGenerating(false)} onDone={(id) => { refetch(); setOpen(id); }} />}

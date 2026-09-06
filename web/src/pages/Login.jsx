@@ -91,9 +91,13 @@ export default function Login({ portal }) {
       <div className="auth-split">
         {/* The brand panel. Below 900px it collapses to a banner above the
             form rather than disappearing — the gradient and the mascot are
-            what make this screen feel like a front door on a phone too. */}
+            what make this screen feel like a front door on a phone too.
+
+            The brand sits in the corner and everything else is centred in the
+            half, so the owl lines up with the form across the fold rather than
+            sinking to the bottom of a full-height column. */}
         <aside className="auth-aside">
-          <Link to="/" className="brand brand-inv brand-lg">
+          <Link to="/" className="brand brand-inv brand-lg auth-brand">
             <Logo size={30} />
             <span className="brand-text">
               <span className="brand-name">{PRODUCT.name}</span>
@@ -101,21 +105,23 @@ export default function Login({ portal }) {
             </span>
           </Link>
 
-          <Mascot pose="owl-board" size={420} className="auth-aside-art" alt="" />
+          <div className="auth-aside-mid">
+            <Mascot pose="owl-board" size={420} className="auth-aside-art" alt="" />
 
-          <div className="auth-aside-foot">
-            <h2 className="auth-aside-title">{copy.asideTitle}</h2>
-            <ul className="auth-points">
-              {copy.points.map(([icon, title, body]) => (
-                <li className="auth-point" key={title}>
-                  <span className="auth-point-icon"><Icon name={icon} size={16} /></span>
-                  <span>
-                    <span className="auth-point-title">{title}</span>
-                    <span className="auth-point-body">{body}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="auth-aside-foot">
+              <h2 className="auth-aside-title">{copy.asideTitle}</h2>
+              <ul className="auth-points">
+                {copy.points.map(([icon, title, body]) => (
+                  <li className="auth-point" key={title}>
+                    <span className="auth-point-icon"><Icon name={icon} size={16} /></span>
+                    <span>
+                      <span className="auth-point-title">{title}</span>
+                      <span className="auth-point-body">{body}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </aside>
 

@@ -4,7 +4,7 @@ import { useApi } from '../lib/useApi.js';
 import { useAuth } from '../lib/auth.jsx';
 import { useToast } from '../lib/toast.jsx';
 import Icon from '../components/Icon.jsx';
-import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, PageHead, SkeletonList, Tabs } from '../components/ui.jsx';
+import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, PageHead, Refreshed, SkeletonList, Tabs } from '../components/ui.jsx';
 import { BRANCHES, BRANCH_NAMES, SEMESTERS, formatDateTime, relative } from '../lib/format.js';
 
 // Scheduling in local time: the input is a datetime-local value, converted to
@@ -132,7 +132,7 @@ export default function Notices() {
   const toast = useToast();
   const [tab, setTab] = useState('published');
   const [composing, setComposing] = useState(false);
-  const { data, error, loading, refetch } = useApi(() => api.announcements(), []);
+  const { data, error, loading, version, refetch } = useApi(() => api.announcements(), []);
 
   const published = data?.announcements ?? [];
   const scheduled = data?.scheduled ?? [];
@@ -171,37 +171,39 @@ export default function Notices() {
       {error && <ErrorNote onRetry={refetch}>{error}</ErrorNote>}
 
       {!loading && !error && (
-        rows.length === 0
-          ? (
-            <Card>
-              <EmptyState
-                icon={tab === 'scheduled' ? 'clock' : 'megaphone'}
-                title={tab === 'scheduled' ? 'Nothing scheduled' : 'No notices right now'}
-                body={tab === 'scheduled'
-                  ? 'Write an announcement and set a publish time — it stays hidden from students until then.'
-                  : isStaff ? 'Publish one and it appears for its audience immediately.' : 'Announcements for your class will appear here.'}
-                action={isStaff ? <Button variant="primary" icon="plus" onClick={() => setComposing(true)}>New notice</Button> : undefined}
-              />
-            </Card>
-          )
-          : (
-            <div className="stack" style={{ gap: 'var(--s2)' }}>
-              {rows.map((a) => (
-                <NoticeCard
-                  key={a.id}
-                  a={a}
-                  actions={isStaff ? (
-                    <div className="row" style={{ gap: 4 }}>
-                      {a.status === 'scheduled' && (
-                        <Button size="sm" onClick={() => publishNow(a)}>Publish now</Button>
-                      )}
-                      <Button size="sm" variant="ghost" className="btn-icon" onClick={() => remove(a)} aria-label="Delete"><Icon name="trash" size={15} /></Button>
-                    </div>
-                  ) : undefined}
+        <Refreshed token={version}>
+          {rows.length === 0
+            ? (
+              <Card>
+                <EmptyState
+                  icon={tab === 'scheduled' ? 'clock' : 'megaphone'}
+                  title={tab === 'scheduled' ? 'Nothing scheduled' : 'No notices right now'}
+                  body={tab === 'scheduled'
+                    ? 'Write an announcement and set a publish time — it stays hidden from students until then.'
+                    : isStaff ? 'Publish one and it appears for its audience immediately.' : 'Announcements for your class will appear here.'}
+                  action={isStaff ? <Button variant="primary" icon="plus" onClick={() => setComposing(true)}>New notice</Button> : undefined}
                 />
-              ))}
-            </div>
-          )
+              </Card>
+            )
+            : (
+              <div className="stack" style={{ gap: 'var(--s2)' }}>
+                {rows.map((a) => (
+                  <NoticeCard
+                    key={a.id}
+                    a={a}
+                    actions={isStaff ? (
+                      <div className="row" style={{ gap: 4 }}>
+                        {a.status === 'scheduled' && (
+                          <Button size="sm" onClick={() => publishNow(a)}>Publish now</Button>
+                        )}
+                        <Button size="sm" variant="ghost" className="btn-icon" onClick={() => remove(a)} aria-label="Delete"><Icon name="trash" size={15} /></Button>
+                      </div>
+                    ) : undefined}
+                  />
+                ))}
+              </div>
+            )}
+        </Refreshed>
       )}
 
       {composing && <ComposeModal onClose={() => setComposing(false)} onDone={refetch} />}

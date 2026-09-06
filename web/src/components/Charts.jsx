@@ -195,6 +195,36 @@ export function DonutChart({ value, max = 100, size = 136, label, sublabel, tone
   );
 }
 
+/* A small percentage ring, for a grid of them.
+ *
+ * Not DonutChart with a smaller `size`: that one hard-codes an --fs-2xl centre
+ * label, which is the right weight for the single hero number on the
+ * attendance screen and far too big for a 76px ring in a card. The geometry is
+ * the same; only the type scale differs.
+ */
+export function Ring({ value, max = 100, size = 76, tone, label }) {
+  const stroke = 8;
+  const r = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * r;
+  const pctValue = Math.max(0, Math.min(1, value / max));
+  const toneColor = tone === 'bad' ? SERIES.bad : tone === 'warn' ? SERIES.warn : SERIES.ok;
+
+  return (
+    <div className="ring" style={{ width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }} role="img" aria-label={`${value} of ${max}`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={SERIES.track} strokeWidth={stroke} />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke={toneColor} strokeWidth={stroke} strokeLinecap="round"
+          strokeDasharray={`${circumference * pctValue} ${circumference}`}
+          style={{ transition: 'stroke-dasharray 520ms cubic-bezier(.2,.8,.2,1)' }}
+        />
+      </svg>
+      <span className="ring-value num">{label ?? `${Math.round(value)}%`}</span>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------- progress */
 
 export function Progress({ value, max = 100, tone }) {

@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth.jsx';
 import Icon from '../components/Icon.jsx';
 import Logo, { Mascot } from '../components/Logo.jsx';
 import { Badge, Button } from '../components/ui.jsx';
-import { Progress } from '../components/Charts.jsx';
+import { Ring } from '../components/Charts.jsx';
 import { attendanceTone, formatDate, relative } from '../lib/format.js';
 
 // Suggestion icons come from the API as names; anything unrecognised falls back
@@ -60,20 +60,21 @@ function DataBlock({ data }) {
   }
 
   if (data.type === 'attendance') {
+    /* A ring per subject rather than a stack of bars. Five bars of near-equal
+       length all read as "fine"; five rings read as five subjects, and the
+       number a student came here for is in the middle of each one. */
     return (
       <div className="chat-data">
         <div className="chat-data-head row-between">
           <span className="eyebrow">By subject</span>
           <Badge tone={attendanceTone(data.overall)}>{data.overall}% overall</Badge>
         </div>
-        <div style={{ padding: 'var(--s3) var(--s4) var(--s4)' }}>
+        <div className="ring-grid">
           {data.bySubject.map((s) => (
-            <div key={s.subjectId} style={{ marginBottom: 'var(--s3)' }}>
-              <div className="row-between" style={{ marginBottom: 5 }}>
-                <span style={{ fontSize: 'var(--fs-sm)' }}>{s.subject}</span>
-                <span className="num" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{s.percent}%</span>
-              </div>
-              <Progress value={s.percent} tone={attendanceTone(s.percent)} />
+            <div className="ring-card" key={s.subjectId}>
+              <Ring value={s.percent} tone={attendanceTone(s.percent)} />
+              <span className="ring-title">{s.subject}</span>
+              <span className="ring-meta">{s.attended} of {s.total}</span>
             </div>
           ))}
         </div>

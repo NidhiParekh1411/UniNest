@@ -6,7 +6,7 @@ import { useToast } from '../lib/toast.jsx';
 import Icon from '../components/Icon.jsx';
 import FilePicker from '../components/FilePicker.jsx';
 import DocumentViewer from '../components/DocumentViewer.jsx';
-import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, PageHead, SkeletonList, Tabs } from '../components/ui.jsx';
+import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, PageHead, Refreshed, SkeletonList, Tabs } from '../components/ui.jsx';
 import { BRANCHES, BRANCH_NAMES, SEMESTERS, relative, FILE_LABELS } from '../lib/format.js';
 
 const CATEGORIES = [
@@ -136,7 +136,7 @@ export default function Library() {
   const [tab, setTab] = useState('all');
   const [uploading, setUploading] = useState(false);
   const [detail, setDetail] = useState(null);
-  const { data, error, loading, refetch } = useApi(() => api.documents(), []);
+  const { data, error, loading, version, refetch } = useApi(() => api.documents(), []);
 
   const documents = data?.documents ?? [];
   const filtered = tab === 'all' ? documents : documents.filter((d) => d.category === tab);
@@ -176,48 +176,50 @@ export default function Library() {
       {error && <ErrorNote onRetry={refetch}>{error}</ErrorNote>}
 
       {!loading && !error && (
-        filtered.length === 0
-          ? <Card><EmptyState icon="book" title="Nothing here yet" body={isStaff ? 'Upload a circular or a set of notes and the assistant starts answering from it.' : 'Material shared with your class will appear here.'} /></Card>
-          : (
-            <div className="stack" style={{ gap: 'var(--s2)' }}>
-              {filtered.map((d) => (
-                <Card key={d.id} tight>
-                  <div className="row" style={{ alignItems: 'flex-start' }}>
-                    <span style={{ width: 34, height: 34, borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', display: 'grid', placeItems: 'center', color: 'var(--text-3)', flexShrink: 0 }}>
-                      <Icon name={FILE_ICON[d.fileType] ?? 'doc'} size={16} />
-                    </span>
-                    <div className="grow" style={{ minWidth: 0 }}>
-                      <div className="row wrap" style={{ gap: 'var(--s2)', marginBottom: 2 }}>
-                        <span className="list-title">{d.title}</span>
-                        {d.superseded && <Badge tone="warn">Superseded</Badge>}
-                        {d.version > 1 && !d.superseded && <Badge tone="accent">v{d.version}</Badge>}
-                        {d.isDemo && <Badge>Demo</Badge>}
-                        {d.needsOcr && <Badge tone="warn">Not searchable</Badge>}
+        <Refreshed token={version}>
+          {filtered.length === 0
+            ? <Card><EmptyState icon="book" title="Nothing here yet" body={isStaff ? 'Upload a circular or a set of notes and the assistant starts answering from it.' : 'Material shared with your class will appear here.'} /></Card>
+            : (
+              <div className="stack" style={{ gap: 'var(--s2)' }}>
+                {filtered.map((d) => (
+                  <Card key={d.id} tight>
+                    <div className="row" style={{ alignItems: 'flex-start' }}>
+                      <span style={{ width: 34, height: 34, borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', display: 'grid', placeItems: 'center', color: 'var(--text-3)', flexShrink: 0 }}>
+                        <Icon name={FILE_ICON[d.fileType] ?? 'doc'} size={16} />
+                      </span>
+                      <div className="grow" style={{ minWidth: 0 }}>
+                        <div className="row wrap" style={{ gap: 'var(--s2)', marginBottom: 2 }}>
+                          <span className="list-title">{d.title}</span>
+                          {d.superseded && <Badge tone="warn">Superseded</Badge>}
+                          {d.version > 1 && !d.superseded && <Badge tone="accent">v{d.version}</Badge>}
+                          {d.isDemo && <Badge>Demo</Badge>}
+                          {d.needsOcr && <Badge tone="warn">Not searchable</Badge>}
+                        </div>
+                        <p className="list-meta">
+                          {FILE_LABELS[d.fileType] ?? d.fileType} · {d.chunkCount} passages · {d.branch === 'ALL' ? 'All branches' : d.branch}
+                          {d.semester ? ` · Sem ${d.semester}` : ''} · {d.uploader} · {relative(d.uploadedAt)}
+                        </p>
                       </div>
-                      <p className="list-meta">
-                        {FILE_LABELS[d.fileType] ?? d.fileType} · {d.chunkCount} passages · {d.branch === 'ALL' ? 'All branches' : d.branch}
-                        {d.semester ? ` · Sem ${d.semester}` : ''} · {d.uploader} · {relative(d.uploadedAt)}
-                      </p>
+                      <div className="row" style={{ gap: 4 }}>
+                        <Button size="sm" variant="ghost" className="btn-icon" onClick={() => setDetail(d.id)} aria-label="Details"><Icon name="eye" size={15} /></Button>
+                        {d.storedName && (
+                          <Button
+                            size="sm" variant="ghost" className="btn-icon" aria-label="Download"
+                            onClick={() => api.downloadFile('documents', d.id, d.fileName).catch((err) => toast.error(err.message))}
+                          >
+                            <Icon name="download" size={15} />
+                          </Button>
+                        )}
+                        {isStaff && (
+                          <Button size="sm" variant="ghost" className="btn-icon" onClick={() => remove(d)} aria-label="Remove"><Icon name="trash" size={15} /></Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="row" style={{ gap: 4 }}>
-                      <Button size="sm" variant="ghost" className="btn-icon" onClick={() => setDetail(d.id)} aria-label="Details"><Icon name="eye" size={15} /></Button>
-                      {d.storedName && (
-                        <Button
-                          size="sm" variant="ghost" className="btn-icon" aria-label="Download"
-                          onClick={() => api.downloadFile('documents', d.id, d.fileName).catch((err) => toast.error(err.message))}
-                        >
-                          <Icon name="download" size={15} />
-                        </Button>
-                      )}
-                      {isStaff && (
-                        <Button size="sm" variant="ghost" className="btn-icon" onClick={() => remove(d)} aria-label="Remove"><Icon name="trash" size={15} /></Button>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )
+                  </Card>
+                ))}
+              </div>
+            )}
+        </Refreshed>
       )}
 
       {uploading && <UploadModal onClose={() => setUploading(false)} onDone={refetch} />}
