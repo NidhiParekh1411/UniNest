@@ -7,8 +7,14 @@ stylesheet is right and this file is stale — fix it.
 > **Rewritten 5 September 2026.** The previous direction — white page, one
 > orange→pink gradient, glass surfaces, floating cards, motion everywhere — is
 > **void**. Do not restore any part of it from memory. The current system was
-> derived from five reference designs the project owner supplied in
-> `screenshots/`; `college_ref(1)` carries the literal palette and typeface.
+> derived from reference designs the project owner supplied in `screenshots/`;
+> `college_ref(1)` carries the literal palette and typeface.
+>
+> **Revised later the same day**, from `college_ref(2)` and `(6)`–`(11)`, on
+> the owner's instruction. Three rules below were relaxed on purpose and are
+> not oversights: gradients are permitted in one narrowly defined role, one
+> animation is permitted to loop, and the brand mark is now an owl. Each is
+> marked **Revised** where it appears.
 
 ---
 
@@ -17,10 +23,11 @@ stylesheet is right and this file is stale — fix it.
 Flat white blocks on a warm-grey ground, generously rounded and generously
 spaced. One typeface. Colour **classifies** rather than decorates: four pastel
 families, applied consistently, so a colour on a card means the same thing as
-that colour on a chip. Emphasis is ink-black, never saturation. There are no
-gradients, no glass, no floating cards, no drifting blobs and no perpetual
-animation. A surface either sits on the page or is genuinely above it — a
-dialog, a drawer, a dropdown — and only the second kind casts a shadow.
+that colour on a chip. Emphasis is ink-black, never saturation. There is no
+glass, there are no floating cards and no drifting blobs. A surface either sits
+on the page or is genuinely above it — a dialog, a drawer, a dropdown — and
+only the second kind casts a shadow. Gradients exist, but only as light in the
+room, never as paint on the furniture.
 
 The failure this replaces: a screen where every element competed for attention
 through gradient, shadow and motion, so nothing was actually emphasised.
@@ -141,11 +148,76 @@ Allowed: hover and focus transitions, the page-entrance fade, dialog and drawer
 entrances, scroll reveals on the public site, the typing indicator, the
 skeleton shimmer.
 
-Not allowed: anything that loops while idle. No `float`, no `drift`, no
-`marquee`, no `pulseRing`, no rotating logo. Those keyframes were deleted, not
-merely unused — if you find yourself writing one, that is the signal to stop.
+Not allowed: anything that loops *while idle*. No `float`, no `drift`, no
+`pulseRing`, no rotating logo. Those keyframes were deleted, not merely unused
+— if you find yourself writing one, that is the signal to stop.
 
-Everything is disabled under `prefers-reduced-motion`.
+**Revised.** Two things are allowed to repeat, because in both cases the motion
+*is* the content rather than an ornament on it:
+
+- **The step ribbon** on the landing page (`components/Marquee.jsx`). It is
+  explicitly a moving strip of cards, requested as such. It holds its children
+  twice and animates to `-50%`, so the loop is seamless with no measurement and
+  no per-frame JavaScript. It pauses on hover and on `:focus-within`, so a
+  reader can stop it just by pointing at it.
+- **A spinner**, while something is genuinely loading.
+
+Both are still ornament if you reach for them anywhere else.
+
+Staggered entrances use `riseInSoft`, for a list that arrives as a group — the
+assistant's suggestions and starters. Each child sets `--i` inline and the
+delay is `min(var(--i) * 45ms, 400ms)`, so a long list never keeps the reader
+waiting on the last row.
+
+Everything is disabled under `prefers-reduced-motion`. Note that the global
+reduce rule forces `animation-iteration-count: 1`, which would park the ribbon
+at `-50%` — so the ribbon drops its animation outright and becomes an ordinary
+horizontal scroller instead.
+
+---
+
+## Gradients — **Revised**
+
+A gradient is allowed in exactly one role: a large, soft, out-of-focus wash
+**behind** a panel. It is never a button, a card, a border, a chip or text. If
+you can see where it starts and stops, it is being used wrongly.
+
+Three tokens, every stop mixed from the four pastel families, so a wash cannot
+introduce a colour the palette does not already have:
+
+| Token | Where |
+|---|---|
+| `--grad-sand` | The sign-in aside. Warm, from `college_ref(8)`. |
+| `--grad-aurora` | The bloom rising from the bottom of the assistant, behind the composer — `college_ref(9)`/`(10)` in this palette rather than theirs. |
+| `--grad-dusk` | An ink panel wanting depth. Currently unused. |
+
+The composer sitting *on* `--grad-aurora` stays a solid white block. An input
+on a gradient is unreadable, and that is not a trade worth making for a page
+that exists to be typed into.
+
+`--fade-x-bg` and `--fade-x-surface` are masks rather than paint: they dissolve
+a horizontally scrolling strip into its background instead of cutting it off at
+a hard edge. Match the one to whatever the strip actually sits on — that is
+what `.marquee-on-surface` exists for.
+
+---
+
+## Colour has two jobs
+
+Keeping them apart is what fixed the complaint that attendance and results
+"looked the same colour everywhere".
+
+**Identity.** A subject's pastel comes from `toneFor(index)` in
+`components/SubjectRail.jsx` and follows that subject across the dashboard
+rail, the attendance grid and the results grid. Eight subjects in four colours
+is what makes a list scannable instead of a wall.
+
+**Status.** `ok` / `warn` / `bad` mean one thing: position against a threshold
+— 75% for attendance, 40% for marks. They live on the badge and the meter.
+
+The fault was painting the entire card by status. Nearly every subject is above
+the line, so nearly every card was the same green, and the colour carried no
+information at the moment you looked at the page.
 
 ---
 
@@ -155,16 +227,28 @@ Primitives live in `web/src/components/`. Check before you write:
 
 `Button` `Card` `Stat` `Badge` `Note` `Field` `Table` `Modal` `Tabs`
 `PageHead` `EmptyState` `Skeleton` `FilePicker` `Calendar` `WeekStrip`
-`Logo` `Icon` `BarChart` `LineChart` `DonutChart` `Progress` `Reveal`
+`Logo` `Mascot` `Icon` `Marquee` `SubjectRail` `SubjectCard` `CourseMeter`
+`DocumentViewer` `BarChart` `LineChart` `DonutChart` `Progress` `Reveal`
 `Counter` `Frame` `JourneyPath`.
 
-### The brand mark
+### The brand mark — **Revised**
 
-A ghost, drawn in `components/Logo.jsx` as one path with `fill-rule: evenodd`
-so the eyes are holes punched through the body rather than shapes painted on
-it. That is what lets one mark sit on white, on ink and on lime without a
-variant for each — the body inherits `currentColor` and the eyes show whatever
-is behind them.
+An owl, in two forms.
+
+`components/Logo.jsx` draws the glyph as one path with `fill-rule: evenodd`, so
+the eye discs are holes punched through the head and the pupils are islands
+inside those holes. That is what lets one mark sit on white, on ink and on lime
+without a variant for each — the body inherits `currentColor` and the page
+shows through the eyes. It is the version that survives 20px, and it is what
+the sidebar, the site header, the footer and the favicon use.
+
+`<Mascot pose="owl" />` renders the illustrated character from
+`web/public/brand/`, derived from the owner's own artwork in `assets/`. Use it
+where warmth matters more than crispness and there is room for it: the sign-in
+aside, the assistant's empty state, the hero fan.
+
+`Icon name="owl"` is the same animal in the outline vocabulary of the icon set,
+for the sidebar's Assistant entry.
 
 **Nothing renders initials.** A two-letter monogram in a coloured square was
 the single clearest "generated" tell on the old landing page.
@@ -232,8 +316,9 @@ sideways.
 
 Hand-rolled SVG in `components/Charts.jsx` — no charting library. Series
 colours are flat pastels: lime above a threshold, peach approaching it, a muted
-red below. The single surviving gradient in the codebase is the area fade under
-the line chart, which is a legibility device rather than decoration.
+red below. The area fade under the line chart is a legibility device rather
+than decoration; the washes described under "Gradients" are the only other
+place a gradient appears.
 
 Gridlines are `--border`. Axis labels are 11px `--text-3`. The 75% attendance
 line is a dashed `--border-strong` rule, not a red one — the *bars* carry the

@@ -76,7 +76,7 @@ passages · 45 assignments · 143 submissions · 10 announcements (3 scheduled).
 | Results charts | **Done** — SPI trend line, CPI donut, per-subject bars, ranked cohort table | `pages/Results.jsx` |
 | PDF / Excel / Word ingestion | **Done** — format-aware extraction, chunking, indexing on upload | `lib/parse.js`, `rag/chunk.js` |
 | PowerPoint ingestion | **Done** — dependency-free PPTX reader; slide titles become section headings | `lib/parse.js` |
-| Handwritten notes | **Partial** — stored, downloadable, attachable to submissions, but **not text-searchable** (no OCR yet) | see Limitations |
+| Handwritten notes | **Done 5 Sep 2026** — read by the model at upload, chunked and indexed like any other text. Falls back to "stored but not searchable" with no key | `rag/enrich.js` |
 | Assignment submission by students | **Done** — any supported format including photos of handwritten work; late flagged | `pages/Assignments.jsx` |
 | Faculty grading + feedback | **Done** | same |
 | Faculty sharing notes with students | **Done** — upload with branch/semester/subject scoping | `pages/Library.jsx` |
@@ -88,9 +88,12 @@ passages · 45 assignments · 143 submissions · 10 announcements (3 scheduled).
 | Question-bank agent from PPT/material | **Done** — offline extraction path + Gemini path, always a reviewable draft | `rag/generate.js`, `pages/QuestionBanks.jsx` |
 | Scheduled announcements / reminders | **Done** — publish now or at a chosen time; hidden from the audience until due | `routes/announcements.js`, `pages/Notices.jsx` |
 | Document versioning | **Done** — an upload can supersede another; superseded content is excluded from answers but browsable by staff | `routes/documents.js`, `rag/retrieve.js` |
-| Public marketing site | **Done** — landing (hero, journey path, features, audiences, testimonials, CTA) + About with sourced GLS University content | `pages/Landing.jsx`, `pages/About.jsx`, `components/Site*.jsx` |
-| Visual system | **Rebuilt 5 Sep 2026** — flat pastel blocks (lime/lavender/peach/sky) on a warm-grey ground, Manrope only, ink emphasis, **no gradients**. Derived from `screenshots/college_ref(1)–(5)`. `docs/UI_GUIDE.md` rewritten; the 4 Sep gradient/glass guide is void | `web/src/styles/theme.css`, `app.css` |
-| Brand mark | **Done 5 Sep 2026** — a drawn ghost (`components/Logo.jsx`, one evenodd path). No component renders initials any more | `components/Logo.jsx`, `web/public/favicon.svg` |
+| Public marketing site | **Done** — landing (hero photo fan, worked example, step ribbon, masonry features, audiences, CTA) + About with sourced GLS University content | `pages/Landing.jsx`, `pages/About.jsx`, `components/Site*.jsx` |
+| Document viewer | **Done 5 Sep 2026** — PDFs and images render; other formats fall back to the indexed passages. AI summary, topics, dates and tags beside it | `components/DocumentViewer.jsx` |
+| Account editing | **Done 5 Sep 2026** — the PATCH endpoint existed but nothing called it; admins can now correct name, email, cohort and password | `pages/People.jsx`, `routes/users.js` |
+| Visual system | **Rebuilt 5 Sep 2026, revised the same day** — flat pastel blocks (lime/lavender/peach/sky) on a warm-grey ground, Manrope only, ink emphasis. Gradients permitted in one role only (large washes behind a panel). Derived from `screenshots/college_ref(1)–(11)` | `web/src/styles/theme.css`, `app.css` |
+| Brand mark | **Done 5 Sep 2026** — an owl. `components/Logo.jsx` is the glyph (one evenodd path, holes for eyes); `web/public/brand/*.webp` is the illustrated mascot from the owner's artwork. No component renders initials | `components/Logo.jsx`, `web/public/brand/` |
+| Photography | **Done 5 Sep 2026** — 19 CC0 photographs bundled at 1280w WebP, 879 KB total. Nothing is fetched at runtime | `web/public/img/`, `docs/IMAGES.md` |
 | Calendar | **Done 5 Sep 2026** — month grid with prev/next, jump-to-today, per-day session dots; drives the timetable's Day view | `components/Calendar.jsx`, `pages/Timetable.jsx` |
 | Responsive web + phone | **Done** — permanent sidebar ≥960px; below that a topbar hamburger opens a left drawer with the same nav list. The collapsible rail, the bottom tab bar and the "More" sheet were all removed | `styles/app.css`, `components/Shell.jsx` |
 | MongoDB | **Done** — every collection, indexed | `lib/db.js` |
@@ -125,9 +128,12 @@ These are known and deliberate, not oversights.
    document removes its chunks in a second call; a crash between the two leaves
    orphans. Mongo supports multi-document transactions on a replica set (Atlas is
    one) — `lib/db.js` does not expose them yet.
-2. **No OCR.** Handwritten notes and photographed circulars are stored and
-   downloadable but invisible to the assistant. The upload response says so
-   explicitly rather than silently indexing nothing. **Fix: Tesseract.js or a cloud OCR call in `lib/parse.js`.**
+2. **OCR needs a key.** Handwritten notes, photographed circulars and scanned
+   PDFs are read by the model in `rag/enrich.js` and indexed like any other
+   text — but only when `GEMINI_API_KEY` is set. With no key they are stored
+   and downloadable but invisible to the assistant, and the upload response
+   says so explicitly rather than silently indexing nothing. **Fix for a fully
+   offline path: Tesseract.js in `lib/parse.js`.**
 3. **Passwords use a shared demo value and there is no reset flow.** No email
    verification, no forgot-password, no rate limiting on sign-in.
 4. **No file-content validation beyond the extension.** A renamed executable would
@@ -185,7 +191,8 @@ These are known and deliberate, not oversights.
    pure UI and it is the biggest gap between "demo" and "usable".
 2. Bulk spreadsheet import for timetables, attendance and results, using the
    `tables` output already produced by `lib/parse.js`.
-3. OCR in `lib/parse.js` for handwritten and scanned material.
+3. A local OCR path in `lib/parse.js`, so scanned material is searchable
+   without a key as well as with one.
 4. Multi-document transactions in `lib/db.js` for the delete-document-and-chunks
    path, now that the store supports them.
 
@@ -390,12 +397,92 @@ and should be looked at:
   and `what is the placement eligibility criteria` — all document-retrieval
   cases, all against the unmodified seed corpus. Worth a `rag-engineer` pass.
 
+### 5 September 2026 (later still) — UniNest, and three real bugs fixed
+
+The product was renamed **Campus Assistant → UniNest** and the brand mark
+changed from a ghost to an owl, from the owner's own artwork in `assets/`.
+
+**This repo is now a git repository.** `main` and `v1` are frozen at the state
+described in the previous section; all work below is on **`v2`**.
+
+Three reported problems, and what each actually was:
+
+1. **"The generator shows none of my uploads."** Both of the owner's uploads
+   — a scanned PDF and a photographed question paper — extracted *zero* text
+   locally, so they were indexed with no passages and filtered out of the
+   source list (which requires `chunkCount > 0`). `rag/enrich.js` now hands
+   the file to the model after ingestion, in the background. Verified on the
+   two real files: the PDF went 0 → 19 passages, the image 0 → 5, both with a
+   summary, topics and tags.
+
+2. **"Generation isn't working."** `GEMINI_MODEL` was `gemini-3.6-flash`,
+   which has a **20-request-per-day** free-tier cap. It had been exhausted,
+   every call was 429ing, and the adapter swallowed it and silently fell back
+   to extractive answers. Default is now `gemini-3.5-flash`; every Gemini call
+   goes through one transport that retries a short back-off, records an
+   exhausted quota, and reports it through `providerStatus()` instead of
+   hiding it. **Check `/api/chat/status` before concluding the AI is broken.**
+
+3. **"The library shows metadata instead of the document."** It did — the old
+   dialog showed type, version and chunk counts and never the file.
+   `components/DocumentViewer.jsx` is a Preview-style split: the PDF or image
+   on the left, the model's summary, topics, dates and tags on the right.
+   Downloads were also 401ing, because `<a download>` cannot send a bearer
+   token; files are fetched as blobs now.
+
+Also fixed: the black rectangle on tapping the assistant's input (the global
+`:focus-visible` box-shadow ring, which the textarea cancelled `outline` for
+but not `box-shadow`), and the landing nav never highlighting a section (it
+compared `location.hash`, which the anchor scroll updates via
+`history.replaceState` without telling react-router — now a scroll spy).
+
+Design changes: a photo fan in the hero, a self-scrolling ribbon for the six
+steps, a column-based masonry for the features, a two-panel sign-in, an aurora
+behind the assistant's composer, and a subject-identity colour system shared
+by the dashboard rail, the attendance grid and the results grid.
+`docs/UI_GUIDE.md` and the `ui-guide` skill both carry a **Revised** banner
+listing the three rules that were deliberately relaxed — read them before
+"fixing" a gradient or the marquee back out.
+
+### Tests after this session
+
+- `npm run smoke` — **50 passed, 1 failed**. Same single failure as before
+  (`found ungraded submission to grade (none in seed)`), unrelated to this
+  work; the live dataset has no ungraded submission left because earlier runs
+  graded them all. Reseeding clears it.
+- `npm run eval` — **24/26**, up from 23/26, because the two newly transcribed
+  uploads added corpus text. The remaining failures are document-retrieval
+  cases that predate this session.
+
+### Still not verified: how it looks
+
+**No browser was available this session either.** Everything below is
+structural: the production build is clean, every class used in JSX resolves to
+a rule, every `var(--token)` resolves, there are no unused imports, and the new
+endpoints were exercised with curl against the running server.
+
+Structural checks cannot see an ugly layout. **Open it at 375 / 768 / 1440**
+and look at these first, because they are new geometry rather than restyled
+markup:
+
+- The **hero photo fan** — three absolutely-positioned rotated cards. Most
+  likely to collide or overflow at 375px.
+- The **step ribbon**. Check that the loop seam is invisible and that it pauses
+  on hover.
+- The **masonry** at 720–900px, where it switches to two columns.
+- The **document viewer** — it is a full-height overlay below 900px and a
+  side-by-side split above it. Open a PDF, an image, and a Word file.
+- The **sign-in split** at the 900px boundary, where the aside becomes a
+  banner.
+
 ### Next task
 
-1. **Look at the redesign in a browser** at 375 / 768 / 1440 and fix what the
-   structural checks could not see.
+1. **Look at all of this in a browser** at 375 / 768 / 1440.
 2. **Attendance marking and result entry screens.** Unchanged from before: the
    API is built and tested, so it is UI work against known contracts, and it
    removes the most obvious "this is a demo" gap. Build it against the new
    design system — read `docs/UI_GUIDE.md` first, not your memory of it.
-3. **The three failing eval cases**, which predate this session.
+3. **The remaining failing eval cases**, which predate this session.
+4. **Consider a paid Gemini tier or a lighter model** if the free daily
+   allowance keeps running out mid-demo. `gemini-flash-lite-latest` and
+   `gemini-3.1-flash-lite` both had quota available when this was written.

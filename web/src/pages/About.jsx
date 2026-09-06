@@ -84,10 +84,10 @@ function Story() {
           </Reveal>
 
           <Reveal from="right" delay={140}>
-            <Frame src="/images/campus-hero.jpg" alt="GLS University campus" shape="wide" label={`${COLLEGE.name}, ${COLLEGE.city}`} />
+            <Frame src="/img/campus-quad.webp" alt="A college quadrangle on a clear day" shape="wide" label={`${COLLEGE.name}, ${COLLEGE.city}`} />
             <div className="grid-2" style={{ gap: 'var(--s3)', marginTop: 'var(--s3)' }}>
-              <Frame src="/images/campus-5.jpg" alt="Campus building" shape="square" />
-              <Frame src="/images/campus-6.jpg" alt="Students walking" shape="square" />
+              <Frame src="/img/campus-autumn.webp" alt="Campus buildings under autumn trees" shape="square" />
+              <Frame src="/img/library-hall.webp" alt="Library shelves under warm lamps" shape="square" />
             </div>
           </Reveal>
         </div>

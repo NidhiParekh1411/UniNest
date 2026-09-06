@@ -1,86 +1,72 @@
-# Images — what to download and where to put it
+# Images
 
-The site is **complete without any of these**. Every photo slot renders a
-branded gradient placeholder that names the file it is waiting for, so nothing
-looks broken before you add them. Drop a file in and it appears — no code change.
+Every image the product uses is **committed to this repo**. Nothing is fetched
+at runtime, which is the point: the demo has to survive a room with no wifi,
+and a landing page full of broken frames is worse than one with no photographs
+at all.
 
-## Where they go
+Two sets, two purposes.
 
-```
-web/public/images/<filename>.jpg
-```
+## `web/public/brand/` — the mascot
 
-`web/public/` is served at the site root, so `web/public/images/campus-1.jpg`
-is referenced in code as `/images/campus-1.jpg`. That path is already wired up.
+Derived from the owner's own artwork in `assets/`. Referenced through
+`<Mascot pose="..." />` in `components/Logo.jsx`.
 
-## The list
-
-| Filename | Used on | What to look for |
+| File | Pose | Used on |
 |---|---|---|
-| `campus-hero.jpg` | About → "The institution" | A wide shot of a university building or campus courtyard. Landscape, at least 1600px wide. |
-| `campus-1.jpg` | Home → "On campus" (tall) | Two or three students studying together, laptop or notebook visible. **Portrait 3:4.** |
-| `campus-2.jpg` | Home → "On campus" (square) | A library interior — shelves, reading desks. **Square.** |
-| `campus-3.jpg` | Home → "On campus" (square) | A lecture hall or classroom with students seated. **Square.** |
-| `campus-4.jpg` | Home → "On campus" (tall) | Graduation — caps in the air, or students in gowns. **Portrait 3:4.** |
-| `campus-5.jpg` | About → story (square) | A campus building exterior, ideally warm-toned brick or stone. **Square.** |
-| `campus-6.jpg` | About → story (square) | Students walking on a campus path. **Square.** |
+| `owl.webp` | The owl alone | Sign-in aside, the assistant's empty state, the hero fan |
+| `owl-board.webp` | Owl at a chalkboard | Sign-in aside |
+| `owl-trio.webp` | Three birds | Spare — for a "who it is for" block |
 
-Two more are referenced but currently fall back to initials-in-a-circle
-avatars, which look fine as-is — add them only if you want real faces:
+Two of the three source files arrived as RGB with the transparency
+checkerboard *painted into the pixels*. It was keyed out by flood-filling the
+near-grey background inwards from the border, then removing any enclosed
+pocket whose pixels were bimodal at the checker's two greys — a border flood
+alone cannot reach the gaps between a bird's legs.
 
-| Filename | Used on | What to look for |
-|---|---|---|
-| `student-1.jpg` | Home → testimonial | A young Indian man, head-and-shoulders portrait. **Square.** |
-| `faculty-1.jpg` | Home → testimonial | A woman in her 40s in professional dress, portrait. **Square.** |
+The vector mark in `components/Logo.jsx` is the same character drawn as a
+single `fill-rule: evenodd` path, so the eyes are holes and the pupils are
+islands inside them. That is what lets one mark sit on white, on ink and on
+lime with no variants, and it is the version that survives 20px. The raster
+mascot is for sizes where warmth matters more than crispness.
 
-## Where to get them (free, no attribution required)
+## `web/public/img/` — photography
 
-All of these are free for commercial and personal use under the
-[Unsplash License](https://unsplash.com/license) and the
-[Pexels License](https://www.pexels.com/license/). Search these terms and pick
-whichever frame you like — I have deliberately given you search queries rather
-than specific photo IDs, because individual photos get taken down and a dead
-link is worse than a search that always works.
+19 photographs, 879 KB in total, resized to 1280px wide and
+encoded as WebP at quality 68. All **CC0 / public domain**: free for
+commercial use with no attribution required. They are credited here anyway,
+because knowing where a file came from is worth more than the licence
+requires.
 
-**Unsplash** — <https://unsplash.com/s/photos/QUERY>
+| File | Size | Source | Licence | Original |
+|---|---|---|---|---|
+| `books-color.webp` | 21 KB | StockSnap.io | CC0 | https://cdn.stocksnap.io/img-thumbs/960w/CQI990NSLK.jpg |
+| `campus-arch.webp` | 82 KB | Rawpixel | CC0 | https://images.rawpixel.com/editor_1024/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvcGQ1MWI1LTAzNy1qai5qcGc.jpg |
+| `campus-autumn.webp` | 104 KB | StockSnap.io | CC0 | https://cdn.stocksnap.io/img-thumbs/960w/1D180509DF.jpg |
+| `campus-quad.webp` | 50 KB | StockSnap.io | CC0 | https://cdn.stocksnap.io/img-thumbs/960w/E1C34B4580.jpg |
+| `campus-tower.webp` | 122 KB | Rawpixel | CC0 | https://images.rawpixel.com/editor_1024/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvZmwyMjk1NDAzNTM4My1pbWFnZS1rdHdwYTM5Zi5qcGc.jpg |
+| `collab.webp` | 17 KB | Rawpixel | CC0 | https://images.rawpixel.com/editor_1024/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvZnJzdGFydHVwX3N0YXJ0X3VwX3Blb3BsZV8xLWltYWdlLWt5YmNtdGFpLmpwZw.jpg |
+| `desk-laptop.webp` | 27 KB | StockSnap.io | CC0 | https://cdn.stocksnap.io/img-thumbs/960w/OR7D4PANCK.jpg |
+| `exam-sheet.webp` | 40 KB | Rawpixel | CC0 | https://images.rawpixel.com/editor_1024/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvd2s0NDM4ODIwNy1pbWFnZS1rcDZieHUwYy5qcGc.jpg |
+| `lecture-hall.webp` | 37 KB | Rawpixel | CC0 | https://images.rawpixel.com/editor_1024/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTExL2ZsNDcyNzUzNzI2OC1pbWFnZS5qcGc.jpg |
+| `lecture-talk.webp` | 47 KB | Rawpixel | CC0 | https://images.rawpixel.com/editor_1024/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTExL2ZsNTIyNDc3OTA4NzQtaW1hZ2UuanBn.jpg |
+| `library-hall.webp` | 38 KB | Rawpixel | CC0 | https://images.rawpixel.com/editor_1024/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvdXB3azYxODA3MTcwLXdpa2ltZWRpYS1pbWFnZS1rb3drdW55dS5qcGc.jpg |
+| `library-pick.webp` | 82 KB | StockSnap.io | CC0 | https://cdn.stocksnap.io/img-thumbs/960w/3CNOEZPLFX.jpg |
+| `notebook.webp` | 16 KB | StockSnap.io | CC0 | https://cdn.stocksnap.io/img-thumbs/960w/N6NK9J8V0A.jpg |
+| `reading.webp` | 13 KB | StockSnap.io | CC0 | https://cdn.stocksnap.io/img-thumbs/960w/H0VXBZUZP3.jpg |
+| `student-laptop.webp` | 12 KB | StockSnap.io | CC0 | https://cdn.stocksnap.io/img-thumbs/960w/HIOJW30YKD.jpg |
+| `study-floor.webp` | 36 KB | StockSnap.io | CC0 | https://cdn.stocksnap.io/img-thumbs/960w/N444PJYUP9.jpg |
+| `study-group.webp` | 46 KB | StockSnap.io | CC0 | https://cdn.stocksnap.io/img-thumbs/960w/Y2AHVPYB51.jpg |
+| `textbooks.webp` | 67 KB | WP Photo Directory | CC0 | https://pd.w.org/2025/02/667aedd41a60015.50868668-2048x1536.jpg |
+| `writing-notes.webp` | 21 KB | Rawpixel | CC0 | https://images.rawpixel.com/editor_1024/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvcHg4NTEyMTYtaW1hZ2Uta3d2dXgzbTkuanBn.jpg |
 
-| For | Search query |
-|---|---|
-| `campus-hero` | `university campus building` · `college architecture` |
-| `campus-1` | `students studying together` · `study group laptop` |
-| `campus-2` | `university library` · `library bookshelves` |
-| `campus-3` | `lecture hall students` · `classroom university` |
-| `campus-4` | `graduation caps` · `graduation ceremony` |
-| `campus-5` | `college building exterior` |
-| `campus-6` | `students walking campus` |
-| `student-1` | `indian student portrait` |
-| `faculty-1` | `professor portrait` · `indian woman professional portrait` |
+Found through the [Openverse API](https://api.openverse.org/v1/images/),
+filtered to `license=cc0,pdm` and to the three sources that are actual stock
+libraries rather than photo archives — the general Flickr CC0 pool is mostly
+scans and snapshots and was not usable.
 
-**Pexels** — <https://www.pexels.com/search/QUERY/> — same queries. Pexels tends
-to have better South Asian representation, which will look more at home for a
-GLS project than the default Unsplash results.
+### Adding one
 
-**If you want photos of the real campus:** the GLS University site
-(<https://www.glsuniversity.ac.in>) has campus photography. Those are the
-university's own copyright — fine for an internal college submission, but do
-not use them if this ever goes public without asking them first.
-
-## Before you add a file
-
-1. **Resize.** Nothing needs to be wider than 1600px. A 6MB phone photo will
-   make the page crawl. Use <https://squoosh.app> — drag in, set width 1600,
-   export as JPEG at quality 75, and you will land around 150–300KB.
-2. **Name it exactly** as the table says, lowercase, `.jpg`.
-3. **Crop to the stated shape.** A portrait photo in a square slot gets
-   centre-cropped by `object-fit: cover`, which usually cuts off heads.
-
-## Changing which photos are used
-
-The paths live in two places:
-
-- `web/src/pages/Landing.jsx` — the `CampusLife` section
-- `web/src/pages/About.jsx` — the `Story` section
-- `web/src/lib/site.js` — `TESTIMONIALS[].image`
-
-Each is a `<Frame src="/images/…" alt="…" shape="tall|square|wide" label="…" />`.
-Change `src` to point anywhere; change `shape` to change the aspect ratio.
+Put it in `web/public/img/` as WebP, no wider than 1280px, and add a row
+above. Reference it as `/img/<name>.webp` — `web/public/` is served at the
+site root. Keep the whole directory under about 1.5 MB; it ships with the app.

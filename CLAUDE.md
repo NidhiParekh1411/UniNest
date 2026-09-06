@@ -19,7 +19,7 @@ records system (timetables, attendance, results, assignments) with three roles �
 | Backend | Node 20+ / Express (ESM) | Single runtime; local Python is 3.9 and fragile for ML deps |
 | Database | MongoDB via `src/lib/db.js`, with an automatic JSON-file fallback | Every access goes through the `db` module. With no MongoDB reachable it serves `server/data/*.json`, so a fresh clone runs with zero setup. The API surface is async either way — see House rule 3 |
 | Retrieval | BM25 + heuristics, pure JS (`src/rag/`) | Runs with **zero API keys**. No network dependency for a demo |
-| LLM | Pluggable adapter `src/rag/llm.js` | Extractive fallback by default; set `GEMINI_API_KEY` to upgrade generation |
+| LLM | Pluggable adapter `src/rag/llm.js` | Extractive fallback by default; set `GEMINI_API_KEY` to upgrade generation, transcribe scanned uploads and summarise documents |
 | Auth | JWT (HS256) + role-based middleware | |
 
 **Do not add a heavyweight dependency without asking.** Current server deps:
@@ -34,6 +34,8 @@ do not install a charting library, it will not match the design language.
 CLAUDE.md              this file
 docs/                  requirements, state, roadmap, UI guide  <- START HERE
 reference/             the original source PPTX
+assets/                the owner's mascot artwork (source for web/public/brand/)
+screenshots/           the owner's UI reference designs — college_ref(1)–(11)
 .claude/skills/ui-guide/   design system as an invocable skill
 .claude/agents/        subagent definitions for this repo
 server/
@@ -44,6 +46,8 @@ server/
   src/lib/parse.js     PDF/DOCX/XLSX/image text extraction
   src/routes/*.js      one file per resource
   src/rag/             chunk, index, retrieve, route intents, llm adapter
+  src/rag/enrich.js    post-upload pass: transcribe what could not be parsed,
+                       then summarise. Best-effort — never blocks ingestion
   src/seed/seed.js     regenerates all demo data (idempotent, destructive)
   data/uploads/        uploaded binaries; records live in MongoDB (gitignored)
 web/
@@ -51,7 +55,13 @@ web/
   src/lib/api.js       single fetch wrapper; all network calls go through it
   src/components/      shared UI primitives
   src/pages/           one file per route, grouped by role
+  public/brand/        the owl mascot, derived from assets/
+  public/img/          bundled CC0 photography — see docs/IMAGES.md
 ```
+
+## Branches
+
+`main` and `v1` are frozen at the pre-UniNest state. Work happens on **`v2`**.
 
 ## House rules
 
@@ -76,7 +86,14 @@ web/
 5. **The assistant must never guess.** If retrieval scores below threshold, it
    answers "not found in official documents". Citations are mandatory on any
    document-grounded answer. This is a core product promise from the deck.
-6. **Keep `docs/PROJECT_STATE.md` current.** When you finish a chunk of work,
+6. **Every AI path must degrade, and must say that it degraded.** The offline
+   extractive path is the floor; a missing key or an exhausted quota drops to
+   it rather than erroring. But a silent downgrade is the worst outcome —
+   answers keep coming, they are just worse, and nobody knows why. Gemini's
+   free tier is capped **per day** and the cap varies sharply by model
+   (`gemini-3.6-flash` allows twenty), so this is a routine condition, not an
+   edge case. `providerStatus()` reports it; keep it that way.
+7. **Keep `docs/PROJECT_STATE.md` current.** When you finish a chunk of work,
    update the "Status" table and the "Where we left off" section. That file is
    the handoff contract between sessions.
 
