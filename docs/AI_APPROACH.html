@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How the AI works — Campus Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --accent:#f2542d; --accent-2:#e8336d; --accent-ink:#b8341a;
+    --grad:linear-gradient(118deg,#ff8a3d 0%,#f2542d 42%,#e8336d 100%);
+    --soft:#fff4ef; --line:rgba(242,84,45,.20); --line-2:rgba(242,84,45,.4);
+    --ink:#100c0a; --ink-2:#57504b; --ink-3:#8d847e;
+    --bd:#ece7e3; --bg2:#faf8f6;
+    --ok:#1a7d55; --ok-soft:#ebf7f1;
+    --hd:'Plus Jakarta Sans',system-ui,sans-serif;
+    --bd-f:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:var(--bd-f);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:0 24px 96px}
+
+  header{background:var(--soft);border-bottom:1px solid var(--line);padding:56px 0 48px;margin-bottom:56px}
+  header .wrap{padding-bottom:0}
+  .kicker{display:inline-flex;align-items:center;gap:9px;font-family:var(--hd);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-ink)}
+  .kicker::before{content:'';width:22px;height:2px;border-radius:99px;background:var(--grad)}
+  h1{font-family:var(--hd);font-size:clamp(2rem,1.3rem+2.6vw,3rem);font-weight:800;letter-spacing:-.035em;line-height:1.05;margin:16px 0 0}
+  .lede{font-size:1.05rem;color:var(--ink-2);margin-top:18px;max-width:62ch}
+  .meta{margin-top:26px;font-size:.82rem;color:var(--ink-3);font-family:var(--hd);font-weight:600}
+
+  h2{font-family:var(--hd);font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin:64px 0 8px;scroll-margin-top:20px}
+  h2 .n{color:var(--accent);font-variant-numeric:tabular-nums}
+  h3{font-family:var(--hd);font-size:1.05rem;font-weight:700;letter-spacing:-.02em;margin:34px 0 6px}
+  p{margin:14px 0}
+  a{color:var(--accent-ink);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
+  strong{font-weight:650}
+  ul,ol{padding-left:22px;margin:14px 0}
+  li{margin:8px 0}
+  hr{border:0;border-top:1px solid var(--bd);margin:56px 0}
+
+  .toc{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;padding:22px 26px;margin-top:40px}
+  .toc-t{font-family:var(--hd);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+  .toc ol{margin:0;padding-left:20px}
+  .toc li{margin:5px 0;font-size:.94rem}
+  .toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+  .toc a:hover{border-bottom-color:var(--line-2);color:var(--accent-ink)}
+
+  pre{background:#14100e;color:#f6f2ef;border-radius:12px;padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:.83rem;line-height:1.65;margin:18px 0}
+  pre .c{color:#9a908a}
+  pre .k{color:#ffb08a}
+  code{font-family:var(--mono);font-size:.86em;background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--accent-ink)}
+  pre code{background:none;border:0;padding:0;color:inherit;font-size:1em}
+
+  .note{border-left:3px solid var(--accent);background:var(--soft);border-radius:0 12px 12px 0;padding:16px 20px;margin:22px 0}
+  .note p{margin:6px 0}
+  .note-t{font-family:var(--hd);font-weight:700;font-size:.85rem;color:var(--accent-ink);display:block;margin-bottom:2px}
+  .good{border-left-color:var(--ok);background:var(--ok-soft)}
+  .good .note-t{color:var(--ok)}
+
+  .tw{overflow-x:auto;margin:22px 0;border:1px solid var(--bd);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:520px}
+  th{text-align:left;background:var(--bg2);font-family:var(--hd);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:11px 16px;border-bottom:1px solid var(--bd);white-space:nowrap}
+  td{padding:11px 16px;border-bottom:1px solid var(--bd);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+
+  /* pipeline diagram */
+  .pipe{display:grid;gap:0;margin:28px 0;border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+  .pipe-row{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:16px 18px;border-bottom:1px solid var(--bd);align-items:start}
+  .pipe-row:last-child{border-bottom:0}
+  .pipe-row:nth-child(odd){background:var(--bg2)}
+  .pipe-n{width:30px;height:30px;border-radius:9px;background:var(--grad);color:#fff;display:grid;place-items:center;font-family:var(--hd);font-weight:800;font-size:.78rem}
+  .pipe-t{font-family:var(--hd);font-weight:700;font-size:.95rem;letter-spacing:-.01em}
+  .pipe-b{font-size:.88rem;color:var(--ink-2);margin-top:3px}
+  .pipe-f{font-family:var(--mono);font-size:.74rem;color:var(--ink-3);margin-top:5px}
+
+  /* option cards */
+  .opt{border:1px solid var(--bd);border-radius:14px;padding:22px 24px;margin:18px 0;background:#fff}
+  .opt.pick{border-color:var(--line-2);background:var(--soft)}
+  .opt-h{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between}
+  .opt-t{font-family:var(--hd);font-weight:800;font-size:1.1rem;letter-spacing:-.02em}
+  .tag{font-family:var(--hd);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:99px;background:var(--bg2);border:1px solid var(--bd);color:var(--ink-2);white-space:nowrap}
+  .tag.hot{background:var(--grad);border-color:transparent;color:#fff}
+  .tag.ok{background:var(--ok-soft);border-color:rgba(26,125,85,.25);color:var(--ok)}
+  .opt p{margin:10px 0}
+  .opt ul{margin:10px 0}
+
+  footer{margin-top:80px;padding-top:28px;border-top:1px solid var(--bd);font-size:.85rem;color:var(--ink-3)}
+  @media print{header{background:#fff}pre{background:#f5f5f5;color:#000}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="kicker">Technical explainer</span>
+    <h1>How the assistant actually answers a question</h1>
+    <p class="lede">
+      What the AI layer is, what it is not, whether Python is involved, and — if you want
+      Python in the project — the shortest route to adding it that’s actually worth the time.
+    </p>
+    <p class="meta">Campus Assistant · GLS University · AI &amp; retrieval document</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="toc">
+    <div class="toc-t">What’s in here</div>
+    <ol>
+      <li><a href="#short">The short answer</a></li>
+      <li><a href="#rag">What RAG means, plainly</a></li>
+      <li><a href="#pipeline">The pipeline, step by step</a></li>
+      <li><a href="#search">How the search works (and why not embeddings)</a></li>
+      <li><a href="#refuse">The part that matters most: refusing to answer</a></li>
+      <li><a href="#llm">Where the language model fits</a></li>
+      <li><a href="#real">“Is this real AI?” — how to answer that</a></li>
+      <li><a href="#python">Adding Python — three options</a></li>
+      <li><a href="#recommend">What I’d actually do</a></li>
+      <li><a href="#viva">If you’re asked in a viva</a></li>
+    </ol>
+  </div>
+
+  <h2 id="short"><span class="n">01</span> &nbsp;The short answer</h2>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+      <tbody>
+        <tr><td>Is there Python in this project?</td><td><strong>No.</strong> Everything is JavaScript — Node.js on the server, React in the browser.</td></tr>
+        <tr><td>Did we train a model?</td><td><strong>No.</strong> Nothing is trained. Nothing needs to be.</td></tr>
+        <tr><td>Is it a RAG system?</td><td><strong>Yes, genuinely.</strong> Retrieval and generation are both there, built from scratch.</td></tr>
+        <tr><td>Does it use an LLM?</td><td><strong>Optionally.</strong> It works with no API key at all; add a Gemini key and the answers read better.</td></tr>
+        <tr><td>Where does the “AI” live?</td><td><code>server/src/rag/</code> — about 1,200 lines of hand-written retrieval, routing and answer composition.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <span class="note-t">Why no Python</span>
+    <p>
+      Two reasons, both practical. The Python on this machine is 3.9, which is old enough
+      that most current ML libraries fight it. And running a second language means a second
+      process, a second set of dependencies, and a second thing that can be broken on demo
+      day. One runtime that always starts beat a second runtime that sometimes doesn’t.
+    </p>
+  </div>
+
+  <hr />
+
+  <h2 id="rag"><span class="n">02</span> &nbsp;What RAG means, plainly</h2>
+
+  <p>
+    RAG stands for <strong>Retrieval-Augmented Generation</strong>. It’s a fix for the main
+    problem with chatbots: they make things up.
+  </p>
+
+  <p>A plain chatbot answers from whatever it absorbed during training. Ask it your college’s attendance rule and it will invent something that sounds right. RAG does it differently:</p>
+
+  <ol>
+    <li><strong>Retrieval</strong> — first, go and <em>find</em> the relevant text in real documents.</li>
+    <li><strong>Augmented</strong> — hand that text to the answering step as the only material it may use.</li>
+    <li><strong>Generation</strong> — write the answer from that text, and say where it came from.</li>
+  </ol>
+
+  <p>
+    So the model is never asked “what is the attendance rule?”. It is asked “here are three
+    passages from the college’s regulations — answer using only these”. That’s the whole idea,
+    and it’s why every answer in this app carries a citation you can click.
+  </p>
+
+  <hr />
+
+  <h2 id="pipeline"><span class="n">03</span> &nbsp;The pipeline, step by step</h2>
+
+  <p>Here is what happens between a faculty member uploading a PDF and a student getting an answer.</p>
+
+  <div class="pipe">
+    <div class="pipe-row">
+      <span class="pipe-n">1</span>
+      <div>
+        <div class="pipe-t">A document is uploaded</div>
+        <div class="pipe-b">Faculty upload a circular, timetable, notes or slide deck, and tag it with the branch and semester it applies to.</div>
+        <div class="pipe-f">server/src/routes/documents.js</div>
+      </div>
+    </div>
+    <div class="pipe-row">
+      <span class="pipe-n">2</span>
+      <div>
+        <div class="pipe-t">Text is pulled out, format by format</div>
+        <div class="pipe-b">PDFs, Word files, Excel sheets and PowerPoint decks are each read the right way — slide titles become headings, spreadsheet tables stay tables. Images are stored but not read (no OCR yet).</div>
+        <div class="pipe-f">server/src/lib/parse.js</div>
+      </div>
+    </div>
+    <div class="pipe-row">
+      <span class="pipe-n">3</span>
+      <div>
+        <div class="pipe-t">It’s cut into passages</div>
+        <div class="pipe-b">About 700 characters each, split on whole sentences so a quote never starts mid-clause. Neighbouring passages overlap by one sentence, so a fact sitting on a boundary isn’t lost. Each passage remembers the heading it sat under — that’s what lets a citation say “§4.2 Attendance”.</div>
+        <div class="pipe-f">server/src/rag/chunk.js</div>
+      </div>
+    </div>
+    <div class="pipe-row">
+      <span class="pipe-n">4</span>
+      <div>
+        <div class="pipe-t">Words are normalised and indexed</div>
+        <div class="pipe-b">Words are lowercased and stemmed (“attending”, “attended”, “attendance” all become one term), common words are dropped, and a small synonym table maps everyday phrasing onto document vocabulary — including a few Gujarati/Hindi transliterations like <em>hajri</em> and <em>pariksha</em>.</div>
+        <div class="pipe-f">server/src/rag/tokenize.js · index.js</div>
+      </div>
+    </div>
+    <div class="pipe-row">
+      <span class="pipe-n">5</span>
+      <div>
+        <div class="pipe-t">A question arrives — is it a lookup or a search?</div>
+        <div class="pipe-b">“What’s <em>my</em> attendance?” is a database lookup. “What’s the attendance <em>policy</em>?” is a document search. Both contain the word “attendance”, so the router scores personal phrasing against policy phrasing to tell them apart.</div>
+        <div class="pipe-f">server/src/rag/router.js</div>
+      </div>
+    </div>
+    <div class="pipe-row">
+      <span class="pipe-n">6</span>
+      <div>
+        <div class="pipe-t">Permissions are applied <em>before</em> ranking</div>
+        <div class="pipe-b">Passages the asker isn’t entitled to see are removed from the pool first, not filtered out of the results afterwards. A student can’t phrase a question cleverly enough to rank another branch’s material into view, because it was never in the running.</div>
+        <div class="pipe-f">server/src/rag/retrieve.js</div>
+      </div>
+    </div>
+    <div class="pipe-row">
+      <span class="pipe-n">7</span>
+      <div>
+        <div class="pipe-t">Passages are ranked with BM25</div>
+        <div class="pipe-b">The standard text-search formula (the same family search engines have used for decades). Newer documents get a small boost, and material tagged for your own semester gets a small boost. At most two passages per document, so one circular can’t crowd out a second source.</div>
+        <div class="pipe-f">server/src/rag/index.js · retrieve.js</div>
+      </div>
+    </div>
+    <div class="pipe-row">
+      <span class="pipe-n">8</span>
+      <div>
+        <div class="pipe-t">Confidence is checked — and it may refuse</div>
+        <div class="pipe-b">Two gates must both pass. If they don’t, it answers “not found in official documents” instead of guessing. See section 05.</div>
+        <div class="pipe-f">server/src/rag/retrieve.js</div>
+      </div>
+    </div>
+    <div class="pipe-row">
+      <span class="pipe-n">9</span>
+      <div>
+        <div class="pipe-t">The answer is written, with citations</div>
+        <div class="pipe-b">Either by stitching the best sentences together (default, no internet needed) or by Gemini rewriting those same passages into prose. Citations are attached either way, as structured data the interface renders separately — so they can’t be hallucinated into the text.</div>
+        <div class="pipe-f">server/src/rag/llm.js · answer.js</div>
+      </div>
+    </div>
+  </div>
+
+  <hr />
+
+  <h2 id="search"><span class="n">04</span> &nbsp;How the search works — and why not embeddings</h2>
+
+  <p>
+    There are two ways to find relevant text. This project uses the first one.
+  </p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>&nbsp;</th><th>Keyword search (BM25) — what we use</th><th>Semantic search (embeddings)</th></tr></thead>
+      <tbody>
+        <tr><td><strong>How it works</strong></td><td>Matches words, weighting rare words more heavily than common ones</td><td>Turns text into a list of numbers capturing meaning, then finds the closest ones</td></tr>
+        <tr><td><strong>Needs</strong></td><td>Nothing — pure arithmetic</td><td>A trained model, a vector database</td></tr>
+        <tr><td><strong>Speed</strong></td><td>Under a millisecond</td><td>Tens to hundreds of milliseconds</td></tr>
+        <tr><td><strong>Handles rewording</strong></td><td>Partly — via stemming and a synonym list</td><td>Yes, that’s the whole point</td></tr>
+        <tr><td><strong>Explainable</strong></td><td>Yes — you can see exactly which words matched</td><td>Not really</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    BM25 was the right call for this corpus. College circulars are short, use consistent
+    vocabulary, and students tend to ask using words that actually appear in them. The
+    stemmer plus a hand-built synonym table covers most rephrasing — “how many lectures
+    can I skip” finds the attendance rule even though the document says none of those words.
+  </p>
+
+  <p>
+    <strong>Its ceiling:</strong> a question phrased with genuinely no vocabulary in common
+    with the document will miss. Embeddings would catch that. That’s the main thing
+    Python would buy you — see section 08.
+  </p>
+
+  <hr />
+
+  <h2 id="refuse"><span class="n">05</span> &nbsp;The part that matters most: refusing to answer</h2>
+
+  <p>
+    An assistant that invents an exam date is worse than no assistant. So before answering,
+    two separate checks must both pass:
+  </p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Gate</th><th>Question it asks</th><th>Threshold</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Score</strong></td><td>Did the best passage match well at all?</td><td><code>2.2</code></td></tr>
+        <tr><td><strong>Coverage</strong></td><td>Were the <em>distinctive</em> words of the question actually found?</td><td><code>0.42</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    The second gate is the interesting one. Score alone is easy to fool: ask about the campus
+    wifi password, and a hostel circular scores respectably purely because “campus” is a
+    common word. So coverage weights each question word by how rare it is, and a word that
+    appears nowhere in the corpus is charged the maximum penalty. A question the documents
+    genuinely cannot answer sinks.
+  </p>
+
+  <p>
+    There’s an escape hatch for one real case: a single very rare, very precise match — like
+    “unfair means” — is strong evidence even when the rest of the sentence is filler. That
+    only counts if a second word corroborates it, so one coincidental rare word can’t carry
+    an answer alone.
+  </p>
+
+  <div class="note good">
+    <span class="note-t">This is tested</span>
+    <p>
+      <code>npm run eval</code> runs 26 cases: 22 routing decisions and 3 questions the
+      documents deliberately can’t answer. All 26 pass. If you ever lower those thresholds
+      to make a demo look better, that test is what will catch you.
+    </p>
+  </div>
+
+  <hr />
+
+  <h2 id="llm"><span class="n">06</span> &nbsp;Where the language model fits</h2>
+
+  <p>Only at the last step — turning retrieved passages into a readable sentence. There are two modes, and the app picks automatically:</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>&nbsp;</th><th>Extractive (default)</th><th>Gemini (optional)</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Turned on by</strong></td><td>Nothing — it’s the default</td><td>Setting <code>GEMINI_API_KEY</code></td></tr>
+        <tr><td><strong>How it answers</strong></td><td>Picks and stitches the best sentences from the passages</td><td>Rewrites those same passages into prose</td></tr>
+        <tr><td><strong>Can it invent a fact?</strong></td><td>No — it can only quote</td><td>Constrained to the passages, and told to say <code>NOT_FOUND</code> if they don’t cover it</td></tr>
+        <tr><td><strong>Reads like</strong></td><td>Quotation — accurate but stiff</td><td>Natural prose</td></tr>
+        <tr><td><strong>Needs internet</strong></td><td>No</td><td>Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    Both return the same shape, so the rest of the app doesn’t know or care which ran. That
+    was a deliberate rule: <strong>a feature that only works with an API key isn’t finished</strong>.
+    If the wifi dies during your demo, the assistant keeps answering.
+  </p>
+
+  <h3>Turning Gemini on</h3>
+  <p>
+    Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a>,
+    then put it in <code>server/.env</code>:
+  </p>
+  <pre><code>GEMINI_API_KEY=<span class="k">your-key-here</span>
+GEMINI_MODEL=gemini-3.6-flash</code></pre>
+  <p>Restart the server. Nothing else changes — same retrieval, same citations, better prose. <strong>This is the single highest-value five minutes you can spend on this project.</strong></p>
+
+  <hr />
+
+  <h2 id="real"><span class="n">07</span> &nbsp;“Is this real AI?” — how to answer that</h2>
+
+  <p>Yes, and here’s the honest framing.</p>
+
+  <p>
+    A lot of student RAG projects are a thin wrapper: they send the user’s question straight
+    to ChatGPT with some text pasted in front of it. The AI part is entirely somebody else’s
+    API. Remove the key and there’s nothing left.
+  </p>
+
+  <p>This one is the opposite. Everything that makes RAG <em>work</em> is written here:</p>
+
+  <ul>
+    <li>the chunking strategy, including sentence-aligned splits and heading inheritance</li>
+    <li>the tokeniser, stemmer, stopword list and synonym mapping</li>
+    <li>the BM25 index and scorer</li>
+    <li>the intent router that separates record lookups from document questions</li>
+    <li>the scope filter that runs before ranking</li>
+    <li>the two-gate confidence check and the abstention behaviour</li>
+    <li>the extractive answer composer, with its weighting for obligations and numbers</li>
+    <li>the follow-up mechanism when a question is missing information</li>
+  </ul>
+
+  <p>
+    The LLM is one swappable component at the end. That’s the more defensible engineering
+    position, and it’s worth saying plainly rather than apologising for the absence of a
+    trained model. <strong>Nothing here needed training</strong> — the task is finding the
+    right paragraph in fourteen documents, and BM25 does that better than a small
+    fine-tuned model would.
+  </p>
+
+  <hr />
+
+  <h2 id="python"><span class="n">08</span> &nbsp;Adding Python — three options</h2>
+
+  <p>
+    If you want Python in the project — because the syllabus expects it, or because it makes
+    the report stronger — here are the three routes, cheapest first. All of them keep the
+    existing Node app exactly as it is; Python is added <em>alongside</em>, never as a rewrite.
+  </p>
+
+  <div class="opt">
+    <div class="opt-h">
+      <span class="opt-t">Option A · Python for OCR</span>
+      <span class="tag ok">~1–2 hours</span>
+    </div>
+    <p>
+      <strong>What it fixes:</strong> handwritten notes and photographed circulars are stored
+      and downloadable today, but the assistant can’t read them. This is a real, documented
+      gap — not invented work.
+    </p>
+    <p><strong>How:</strong> a tiny Python service that accepts an image and returns text.</p>
+    <pre><code>pip install fastapi uvicorn pytesseract pillow
+<span class="c"># plus: brew install tesseract</span></code></pre>
+    <p>
+      Node calls it at <code>http://localhost:8000/ocr</code> when an uploaded file is an
+      image, and the text it returns goes through the same chunking and indexing as everything
+      else. Roughly 40 lines of Python and one <code>if</code> in <code>parse.js</code>.
+    </p>
+    <p><strong>Why it’s first:</strong> smallest change, closes a gap you’ve already documented, and demos well — upload a photo of a handwritten notice, then ask about it.</p>
+  </div>
+
+  <div class="opt pick">
+    <div class="opt-h">
+      <span class="opt-t">Option B · Python for semantic search</span>
+      <span class="tag hot">~3–4 hours · best result</span>
+    </div>
+    <p>
+      <strong>What it fixes:</strong> the real ceiling from section 04 — questions phrased
+      with no words in common with the document.
+    </p>
+    <p><strong>How:</strong> a Python service that turns text into embeddings.</p>
+    <pre><code>pip install fastapi uvicorn sentence-transformers
+<span class="c"># model: all-MiniLM-L6-v2 — 80MB, runs on a laptop CPU</span></code></pre>
+    <ol>
+      <li>On upload, Node sends each passage to Python and stores the returned vector in MongoDB alongside the passage.</li>
+      <li>On a question, Node sends the question to Python, gets a vector, and finds the closest passages.</li>
+      <li><strong>Combine both lists</strong> — BM25’s and the vector search’s — with reciprocal rank fusion. Keep the existing abstention gate on top.</li>
+    </ol>
+    <div class="note">
+      <span class="note-t">Don’t replace BM25 — fuse with it</span>
+      <p>
+        Hybrid search beats either method alone, and it’s the current standard practice. It’s
+        also safer: if the Python service is down, you fall back to BM25 and the app still
+        works. Re-run <code>npm run eval</code> afterwards and do not accept a drop in the
+        abstention score to buy accuracy elsewhere.
+      </p>
+    </div>
+    <p>
+      <strong>Bonus:</strong> MongoDB Atlas has vector search built in on the free tier, so you
+      don’t need a separate vector database. Python just produces the numbers.
+    </p>
+  </div>
+
+  <div class="opt">
+    <div class="opt-h">
+      <span class="opt-t">Option C · Rewrite the RAG layer in Python</span>
+      <span class="tag">~2–3 days · not recommended</span>
+    </div>
+    <p>
+      Move all of <code>server/src/rag/</code> to a Python FastAPI service, probably using
+      LangChain or LlamaIndex.
+    </p>
+    <p><strong>Why I’d push back:</strong></p>
+    <ul>
+      <li>You’d be rebuilding something that already works and passes 26 tests.</li>
+      <li>LangChain would replace your hand-written retrieval with a library call — which makes the project <em>less</em> impressive, not more. The custom retrieval is the strongest part of this codebase.</li>
+      <li>Two processes to start means twice as many ways for the demo to fail.</li>
+    </ul>
+    <p>Only worth it if someone has explicitly told you the AI component must be written in Python.</p>
+  </div>
+
+  <hr />
+
+  <h2 id="recommend"><span class="n">09</span> &nbsp;What I’d actually do</h2>
+
+  <p>In this order:</p>
+
+  <ol>
+    <li><strong>Set <code>GEMINI_API_KEY</code>.</strong> Five minutes, free, and it’s the biggest visible improvement available. Do this regardless of the Python question.</li>
+    <li><strong>If Python is required:</strong> Option A first (OCR). It’s genuinely useful, it’s quick, and it gives you a real Python component to write about.</li>
+    <li><strong>If you have a spare afternoon and want the strongest version:</strong> Option B (hybrid search). This is the one that would impress someone who knows the field.</li>
+    <li><strong>Skip Option C</strong> unless it’s mandated.</li>
+  </ol>
+
+  <p>Say the word and I’ll build whichever of these you pick.</p>
+
+  <hr />
+
+  <h2 id="viva"><span class="n">10</span> &nbsp;If you’re asked in a viva</h2>
+
+  <p><strong>“Where is the AI in this project?”</strong></p>
+  <p>
+    It’s a retrieval-augmented generation system. Retrieval is a BM25 index built from
+    scratch over passages we chunk out of the college’s own documents; generation composes
+    an answer strictly from those passages and cites them. The retrieval, ranking,
+    routing and abstention logic is all ours — the language model is one swappable component
+    at the end, and the system works without it.
+  </p>
+
+  <p><strong>“Why didn’t you train a model?”</strong></p>
+  <p>
+    The task is finding the right paragraph in a set of college documents, not learning a new
+    skill. Training would need labelled data we don’t have, and would be worse at it. RAG is
+    the correct architecture for grounded question answering over a document set that changes
+    every time a circular is issued — and retraining on every new circular would be absurd.
+  </p>
+
+  <p><strong>“What happens if it doesn’t know?”</strong></p>
+  <p>
+    It says so. Two confidence gates — a relevance score and an IDF-weighted coverage check —
+    must both pass, otherwise it returns “not found in official documents”. That behaviour is
+    tested: three of the 26 eval cases are questions the corpus deliberately cannot answer,
+    and it abstains on all three.
+  </p>
+
+  <p><strong>“Why JavaScript and not Python?”</strong></p>
+  <p>
+    One runtime for the whole system — fewer moving parts, one deployment, and the retrieval
+    layer needed no ML library. If we add semantic search, that’s where Python earns its
+    place: a small embedding service fused with BM25 rather than replacing it.
+  </p>
+
+  <p><strong>“What’s the weakest part?”</strong></p>
+  <p>
+    Lexical retrieval will miss a question that shares no vocabulary with the document. And
+    there’s no OCR, so handwritten material is stored but not searchable. Both are known,
+    both are documented in <code>docs/PROJECT_STATE.md</code>, and both have a planned fix.
+  </p>
+
+  <div class="note">
+    <span class="note-t">Knowing your own limitations is worth marks</span>
+    <p>
+      Every honest answer above is stronger than a vague one. “Here’s exactly where it
+      breaks, here’s the fix, here’s why we didn’t do it yet” reads as engineering judgment.
+      Claiming it handles everything reads as not having tested it.
+    </p>
+  </div>
+
+  <footer>
+    Campus Assistant · AI &amp; retrieval · See also <code>docs/DATABASE_SETUP.html</code> to
+    get it running, and <code>docs/PROJECT_STATE.md</code> for the full limitations list.
+  </footer>
+
+</div>
+</body>
+</html>

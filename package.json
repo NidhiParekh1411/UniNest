@@ -1,0 +1,22 @@
+{
+  "name": "college-rag-assistant",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "seed": "npm run seed -w server",
+    "server": "npm run dev -w server",
+    "web": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "eval": "node server/src/rag/__eval__.js",
+    "smoke": "node server/src/smoke.mjs"
+  }
+}
