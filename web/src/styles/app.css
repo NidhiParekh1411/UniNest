@@ -1224,6 +1224,108 @@
 .step-title { font-size: var(--fs-lg); font-weight: 800; letter-spacing: -0.025em; }
 .step-body { font-size: var(--fs-sm); color: var(--text-2); margin: var(--s2) 0 0; line-height: 1.65; }
 
+/* --- document viewer ----------------------------------------------------
+   A Preview-style split: the document on the left, what the model read out of
+   it on the right. It is deliberately bigger than a dialog — you are reading a
+   document, not confirming an action — but it is still an overlay, so it is
+   portalled and it traps Escape like one. */
+
+.viewer {
+  position: relative;
+  display: flex; flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 260ms var(--ease-out) both;
+  overflow: hidden;
+  outline: none;
+}
+.viewer-head {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s4) var(--s4) var(--s4) var(--s5);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.viewer-title { font-size: var(--fs-lg); font-weight: 800; letter-spacing: -0.025em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viewer-sub { font-size: var(--fs-xs); color: var(--text-3); margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.viewer-body { flex: 1; display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; overflow: hidden; }
+
+/* The document pane sits on the grey ground so a white page reads as a sheet
+   laid on a desk, which is what makes the split legible at a glance. */
+.viewer-doc {
+  position: relative;
+  min-height: 0;
+  background: var(--bg);
+  overflow: auto;
+}
+.viewer-frame { width: 100%; height: 100%; border: 0; display: block; background: var(--bg); }
+.viewer-image-wrap { min-height: 100%; display: grid; place-items: center; padding: var(--s5); }
+.viewer-image { max-width: 100%; height: auto; border-radius: var(--r-sm); box-shadow: var(--shadow-md); }
+
+.viewer-text { padding: var(--s6) var(--s5); max-width: 74ch; margin-inline: auto; }
+.viewer-text section + section { margin-top: var(--s5); }
+.viewer-text p { font-size: var(--fs-sm); line-height: 1.8; color: var(--text-2); margin: 0; }
+.viewer-text-head { font-size: var(--fs-xs); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); margin: 0 0 var(--s2); }
+
+.viewer-status {
+  height: 100%; min-height: 220px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s3);
+  padding: var(--s6);
+  color: var(--text-3); font-size: var(--fs-sm); text-align: center;
+}
+
+.viewer-side {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--s5);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  display: flex; flex-direction: column; gap: var(--s5);
+}
+.viewer-block { min-width: 0; }
+.viewer-block-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s3); }
+.viewer-block-title {
+  font-size: var(--fs-2xs); font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3);
+  margin-bottom: var(--s3);
+}
+.viewer-block-head .viewer-block-title { margin-bottom: 0; }
+.viewer-summary { font-size: var(--fs-sm); line-height: 1.75; margin: 0; }
+.viewer-empty { font-size: var(--fs-sm); color: var(--text-3); margin: 0; line-height: 1.65; }
+
+.viewer-topics { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s2); }
+.viewer-topics li {
+  font-size: var(--fs-sm);
+  padding-left: var(--s4);
+  position: relative;
+}
+.viewer-topics li::before {
+  content: ''; position: absolute; left: 0; top: 0.6em;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--lime-2);
+}
+
+.viewer-dates, .viewer-facts { margin: 0; display: grid; gap: var(--s2); }
+.viewer-dates > div, .viewer-facts > div {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3);
+  font-size: var(--fs-sm);
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--border);
+}
+.viewer-dates dt, .viewer-facts dt { color: var(--text-3); margin: 0; }
+.viewer-dates dd, .viewer-facts dd { margin: 0; font-weight: 700; text-align: right; }
+.viewer-dates dd { color: var(--sky-ink); }
+
+.spinner {
+  width: 18px; height: 18px; flex-shrink: 0;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* --- the marquee ribbon -------------------------------------------------
    The track holds its children twice and slides to -50%, so the loop is
    seamless without measuring anything. `min-width: max-content` is what stops
@@ -1546,6 +1648,7 @@
   .modal-backdrop { align-items: center; padding: var(--s5); }
   .modal { max-width: 560px; border-radius: var(--r-xl); max-height: 88dvh; }
   .modal-wide { max-width: 820px; }
+  .viewer { height: 92dvh; max-width: 1180px; border-radius: var(--r-xl); border: 1px solid var(--border); }
   .modal-foot { padding-bottom: var(--s5); }
   .toast-stack { left: auto; right: var(--s5); bottom: var(--s5); width: 340px; }
 }
@@ -1580,6 +1683,11 @@
   .step-grid, .feature-grid, .aud-grid, .acc-grid, .contact-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .path-steps { gap: var(--s7); }
   .mason { column-count: 3; }
+  /* Side by side once there is room for both to be readable. Below this the
+     document takes the top of the screen and the analysis scrolls under it,
+     because two 300px columns are worse than one of each. */
+  .viewer-body { grid-template-rows: none; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.85fr); }
+  .viewer-side { border-top: 0; border-left: 1px solid var(--border); padding: var(--s5); }
   .auth { padding: var(--s6); }
   .auth-split { grid-template-columns: 1.02fr 1fr; min-height: min(760px, calc(100dvh - var(--s7))); }
   .auth-aside { padding: var(--s7); }

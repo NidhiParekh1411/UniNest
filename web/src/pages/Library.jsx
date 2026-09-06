@@ -5,8 +5,9 @@ import { useAuth } from '../lib/auth.jsx';
 import { useToast } from '../lib/toast.jsx';
 import Icon from '../components/Icon.jsx';
 import FilePicker from '../components/FilePicker.jsx';
-import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, Note, PageHead, SkeletonList, Tabs } from '../components/ui.jsx';
-import { BRANCHES, BRANCH_NAMES, SEMESTERS, formatDate, relative, FILE_LABELS } from '../lib/format.js';
+import DocumentViewer from '../components/DocumentViewer.jsx';
+import { Badge, Button, Card, EmptyState, ErrorNote, Field, Modal, PageHead, SkeletonList, Tabs } from '../components/ui.jsx';
+import { BRANCHES, BRANCH_NAMES, SEMESTERS, relative, FILE_LABELS } from '../lib/format.js';
 
 const CATEGORIES = [
   { value: 'notes', label: 'Study material' },
@@ -37,7 +38,12 @@ function UploadModal({ onClose, onDone }) {
       Object.entries({ ...form, title: form.title || file.name.replace(/\.[^.]+$/, '') })
         .forEach(([k, v]) => { if (v !== '' && v != null) form_.append(k, v); });
       const res = await api.uploadDocument(form_);
-      toast.success(res.warning ?? `Indexed ${res.indexed} passages. The assistant can answer from this now.`);
+      // Enrichment runs after the response, so a file that parsed to nothing
+      // locally is not necessarily a failure — say what is actually happening.
+      if (res.warning) toast.error(res.warning);
+      else if (res.analysing && res.indexed === 0) toast.success('Uploaded. No text could be parsed locally, so the AI is reading the file now — reopen it in a moment.');
+      else if (res.analysing) toast.success(`Indexed ${res.indexed} passages. The AI is summarising it in the background.`);
+      else toast.success(`Indexed ${res.indexed} passages. The assistant can answer from this now.`);
       onDone();
       onClose();
     } catch (err) {
@@ -124,56 +130,6 @@ function UploadModal({ onClose, onDone }) {
   );
 }
 
-function DocumentDetail({ id, onClose }) {
-  const { data, loading } = useApi(() => api.document(id), [id]);
-  return (
-    <Modal open onClose={onClose} wide title={data?.document?.title ?? 'Document'} subtitle={data ? `${data.document.fileName} · uploaded by ${data.document.uploader}` : undefined}>
-      {loading ? <SkeletonList rows={4} /> : data && (
-        <div className="stack">
-          <div className="row wrap" style={{ gap: 'var(--s5)' }}>
-            <div><p className="eyebrow">Type</p><p style={{ fontWeight: 600 }}>{FILE_LABELS[data.document.fileType] ?? data.document.fileType}</p></div>
-            <div><p className="eyebrow">Version</p><p style={{ fontWeight: 600 }}>v{data.document.version}</p></div>
-            <div><p className="eyebrow">Indexed</p><p style={{ fontWeight: 600 }}>{data.document.chunkCount} passages</p></div>
-            <div><p className="eyebrow">Uploaded</p><p style={{ fontWeight: 600 }}>{formatDate(data.document.uploadedAt)}</p></div>
-          </div>
-
-          {data.document.superseded && (
-            <Note tone="warn" icon="alert">
-              This version has been superseded. It stays readable here, but the assistant will never quote from it.
-            </Note>
-          )}
-          {data.document.needsOcr && (
-            <Note icon="info">
-              This is an image. It is stored and viewable, but its contents are not text-searchable — OCR is a later phase.
-            </Note>
-          )}
-
-          {data.sections.length > 0 && (
-            <div>
-              <p className="eyebrow" style={{ marginBottom: 'var(--s2)' }}>Sections detected</p>
-              <div className="row wrap" style={{ gap: 6 }}>
-                {data.sections.map((s) => <span className="badge" key={s}>{s}</span>)}
-              </div>
-            </div>
-          )}
-
-          {data.preview.length > 0 && (
-            <div>
-              <p className="eyebrow" style={{ marginBottom: 'var(--s2)' }}>How it was chunked</p>
-              {data.preview.map((p, i) => (
-                <div key={i} style={{ padding: 'var(--s3)', background: 'var(--surface-2)', borderRadius: 'var(--r-sm)', marginBottom: 'var(--s2)' }}>
-                  {p.section && <p className="eyebrow" style={{ marginBottom: 4 }}>{p.section} · page {p.page}</p>}
-                  <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-2)', lineHeight: 1.65 }}>{p.text}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </Modal>
-  );
-}
-
 export default function Library() {
   const { isStudent, isStaff } = useAuth();
   const toast = useToast();
@@ -246,9 +202,12 @@ export default function Library() {
                     <div className="row" style={{ gap: 4 }}>
                       <Button size="sm" variant="ghost" className="btn-icon" onClick={() => setDetail(d.id)} aria-label="Details"><Icon name="eye" size={15} /></Button>
                       {d.storedName && (
-                        <a href={api.fileUrl('documents', d.id)} download>
-                          <Button size="sm" variant="ghost" className="btn-icon" aria-label="Download"><Icon name="download" size={15} /></Button>
-                        </a>
+                        <Button
+                          size="sm" variant="ghost" className="btn-icon" aria-label="Download"
+                          onClick={() => api.downloadFile('documents', d.id, d.fileName).catch((err) => toast.error(err.message))}
+                        >
+                          <Icon name="download" size={15} />
+                        </Button>
                       )}
                       {isStaff && (
                         <Button size="sm" variant="ghost" className="btn-icon" onClick={() => remove(d)} aria-label="Remove"><Icon name="trash" size={15} /></Button>
@@ -262,7 +221,7 @@ export default function Library() {
       )}
 
       {uploading && <UploadModal onClose={() => setUploading(false)} onDone={refetch} />}
-      {detail && <DocumentDetail id={detail} onClose={() => setDetail(null)} />}
+      {detail && <DocumentViewer id={detail} onClose={() => { setDetail(null); refetch(); }} />}
     </div>
   );
 }

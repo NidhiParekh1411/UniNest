@@ -69,6 +69,7 @@ export const api = {
   document: (id) => request(`/documents/${id}`),
   uploadDocument: (formData) => request('/documents', { method: 'POST', formData }),
   deleteDocument: (id) => request(`/documents/${id}`, { method: 'DELETE' }),
+  analyseDocument: (id) => request(`/documents/${id}/analyse`, { method: 'POST' }),
 
   assignments: () => request('/assignments'),
   createAssignment: (body) => request('/assignments', { method: 'POST', body }),
@@ -93,7 +94,40 @@ export const api = {
   deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
   assignSubject: (subjectId, facultyId) => request(`/users/subjects/${subjectId}/assign`, { method: 'POST', body: { facultyId } }),
 
+  // Files cannot be linked to directly: every route is behind a bearer token,
+  // and neither <a download> nor <iframe src> can carry an Authorization
+  // header. So the bytes are fetched like any other request and handed to the
+  // browser as a blob URL, which an <iframe>, an <img> and a download link all
+  // accept. Callers own the URL and must revoke it.
   fileUrl: (kind, id) => `/api/${kind}/${id}/file`,
+
+  async fileBlob(kind, id, { signal } = {}) {
+    const headers = {};
+    const t = token.get();
+    if (t) headers.Authorization = `Bearer ${t}`;
+    const res = await fetch(`/api/${kind}/${id}/file`, { headers, signal });
+    if (!res.ok) {
+      if (res.status === 401) token.set(null);
+      let payload = null;
+      try { payload = await res.json(); } catch { /* not JSON */ }
+      throw new ApiError(payload?.error ?? `Could not load the file (${res.status})`, res.status);
+    }
+    const blob = await res.blob();
+    return { url: URL.createObjectURL(blob), type: blob.type, size: blob.size };
+  },
+
+  async downloadFile(kind, id, filename) {
+    const { url } = await this.fileBlob(kind, id);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || 'download';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // Revoking immediately can cancel the download in some browsers; a tick is
+    // enough for the navigation to have taken the bytes.
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  },
 };
 
 export default api;

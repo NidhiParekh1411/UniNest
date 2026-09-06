@@ -14,15 +14,93 @@ export function providerName() {
   return process.env.GEMINI_API_KEY ? 'gemini' : 'extractive';
 }
 
+export function modelName() {
+  return process.env.GEMINI_MODEL || DEFAULT_MODEL;
+}
+
 export function providerStatus() {
   const name = providerName();
-  return {
+  const status = {
     provider: name,
+    model: name === 'gemini' ? modelName() : null,
     label: name === 'gemini' ? 'Gemini' : 'Offline extractive',
     description: name === 'gemini'
       ? 'Answers are synthesised by Gemini from retrieved passages, with citations enforced.'
       : 'Answers are composed by quoting the most relevant passages verbatim. No external service is used.',
   };
+  // A silent downgrade is the worst possible failure here: answers keep coming,
+  // they are just worse, and nobody knows why. Surfacing the last quota refusal
+  // is what turns "the AI stopped working" into "the daily allowance ran out".
+  if (quotaBlock && quotaBlock.until > Date.now()) {
+    status.degraded = true;
+    status.degradedReason = quotaBlock.message;
+    status.retryAt = new Date(quotaBlock.until).toISOString();
+  }
+  return status;
+}
+
+/* ---------------------------------------------------------------- transport
+
+   Every Gemini call in the product goes through `callGemini`, so quota
+   handling, retry and error reporting exist once.
+
+   The free tier's per-day request allowance is small and varies sharply by
+   model — gemini-3.6-flash allows twenty a day, which a single afternoon of
+   testing exhausts. When that happens the API answers 429 with a RetryInfo
+   telling us how long to wait. Short waits are worth sitting out; a wait
+   measured in hours means the allowance is gone for the day, and the honest
+   response is to degrade to the offline path and *say so* rather than retry
+   into a wall on every subsequent request. */
+
+const DEFAULT_MODEL = 'gemini-3.5-flash';
+const RETRY_CEILING_MS = 8000;
+
+let quotaBlock = null;
+
+function retryDelayMs(error) {
+  const info = (error?.details ?? []).find((d) => String(d['@type']).endsWith('RetryInfo'));
+  const seconds = Number(String(info?.retryDelay ?? '').replace(/s$/, ''));
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
+}
+
+const sleep = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
+async function callGemini(body, { model = modelName(), attempt = 0 } = {}) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error('No GEMINI_API_KEY');
+  if (quotaBlock && quotaBlock.until > Date.now()) throw new Error(quotaBlock.message);
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+  );
+
+  if (res.ok) {
+    quotaBlock = null;
+    return res.json();
+  }
+
+  let payload = null;
+  try { payload = await res.json(); } catch { /* an error page rather than JSON */ }
+  const error = payload?.error;
+
+  if (res.status === 429) {
+    const wait = retryDelayMs(error);
+    if (wait && wait <= RETRY_CEILING_MS && attempt === 0) {
+      await sleep(wait + 250);
+      return callGemini(body, { model, attempt: 1 });
+    }
+    const limit = /limit: (\d+)/.exec(error?.message ?? '')?.[1];
+    quotaBlock = {
+      until: Date.now() + (wait ?? 60_000),
+      message: limit
+        ? `Gemini's free-tier allowance for ${model} is exhausted (${limit} requests/day). Answers fall back to offline composition until it resets.`
+        : `Gemini is rate limiting requests for ${model}. Answers fall back to offline composition until it clears.`,
+    };
+    throw new Error(quotaBlock.message);
+  }
+
+  throw new Error(error?.message ? `Gemini: ${error.message}` : `Gemini responded ${res.status}`);
 }
 
 // ---------------------------------------------------------------- extractive
@@ -115,8 +193,6 @@ function partsText(json) {
 }
 
 async function gemini(question, hits, history = []) {
-  const key = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
   const passages = hits.map((h, i) => `[${i + 1}] ${h.citation.title}${h.citation.section ? ` — ${h.citation.section}` : ''}\n${h.text}`).join('\n\n');
   const priorTurns = history.slice(-4).map((m) => `${m.role === 'user' ? 'Student' : 'Assistant'}: ${m.text}`).join('\n');
 
@@ -126,21 +202,11 @@ async function gemini(question, hits, history = []) {
     `\nQuestion: ${question}`,
   ].filter(Boolean).join('\n');
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 4096 },
-      }),
-    },
-  );
-
-  if (!res.ok) throw new Error(`Gemini responded ${res.status}`);
-  const json = await res.json();
+  const json = await callGemini({
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.2, maxOutputTokens: 4096 },
+  });
   const text = partsText(json);
 
   // Two very different outcomes both arrive as "no answer text", and conflating
@@ -180,27 +246,61 @@ export async function compose(question, hits, history = []) {
   return extractive(question, hits);
 }
 
+// Reads a *file* with the model — the OCR and transcription path.
+//
+// This is how a scanned PDF or a photograph of a notice becomes text. The local
+// extractors in lib/parse.js handle every format that carries text natively;
+// what they cannot do is read pixels, so a scanned circular or a picture of a
+// handwritten page previously ingested as an empty document. It was still
+// listed in the library, but it had no passages, so it could never be quoted,
+// searched or used as a question-bank source — which is exactly what "the
+// generator shows none of my uploads" looked like from the outside.
+//
+// Returns null when no key is set or the call fails, so every caller must have
+// a path that survives without it.
+const INLINE_LIMIT = 12 * 1024 * 1024; // base64 inflates by a third; stay well inside the request cap
+
+export const READABLE_MIME = {
+  pdf: 'application/pdf',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  heic: 'image/heic',
+};
+
+export async function readFile(bytes, mimeType, instruction, { maxOutputTokens = 16384 } = {}) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+  if (!bytes?.length || bytes.length > INLINE_LIMIT) return null;
+  try {
+    const json = await callGemini({
+      contents: [{
+        role: 'user',
+        parts: [
+          { inline_data: { mime_type: mimeType, data: bytes.toString('base64') } },
+          { text: instruction },
+        ],
+      }],
+      generationConfig: { temperature: 0, maxOutputTokens },
+    });
+    return partsText(json) || null;
+  } catch (err) {
+    console.warn('[llm] file read unavailable:', err.message);
+    return null;
+  }
+}
+
 // Free-form generation for the content agent. Returns null when no provider can
 // generate — callers fall back to their own template path.
 export async function generate(systemPrompt, userPrompt, { temperature = 0.4, maxOutputTokens = 2048 } = {}) {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) return null;
-  const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+  if (!process.env.GEMINI_API_KEY) return null;
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-          generationConfig: { temperature, maxOutputTokens, responseMimeType: 'application/json' },
-        }),
-      },
-    );
-    if (!res.ok) throw new Error(`Gemini responded ${res.status}`);
-    const json = await res.json();
+    const json = await callGemini({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+      generationConfig: { temperature, maxOutputTokens, responseMimeType: 'application/json' },
+    });
     return partsText(json) || null;
   } catch (err) {
     console.warn('[llm] generation unavailable:', err.message);
