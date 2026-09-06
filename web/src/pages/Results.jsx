@@ -2,8 +2,9 @@ import { useState } from 'react';
 import api from '../lib/api.js';
 import { useApi } from '../lib/useApi.js';
 import { useAuth } from '../lib/auth.jsx';
+import { SubjectCard } from '../components/SubjectRail.jsx';
 import { Badge, Card, EmptyState, ErrorNote, PageHead, SkeletonList, Table, Tabs } from '../components/ui.jsx';
-import { BarChart, DonutChart, LineChart } from '../components/Charts.jsx';
+import { BarChart, DonutChart, LineChart, Progress } from '../components/Charts.jsx';
 import { BRANCHES, BRANCH_NAMES, SEMESTERS, marksTone } from '../lib/format.js';
 
 function StudentView({ data }) {
@@ -43,23 +44,36 @@ function StudentView({ data }) {
           value={tab}
           onChange={setTab}
         />
-        {current && (
-          <>
-            <BarChart data={subjectChart} threshold={40} />
-            <div style={{ height: 'var(--s4)' }} />
-            <Table
-              keyOf={(r) => r.id}
-              columns={[
-                { key: 'code', header: 'Code', render: (r) => <span className="mono">{r.code}</span> },
-                { key: 'subject', header: 'Subject', render: (r) => <span className="cell-strong">{r.subject}</span> },
-                { key: 'marks', header: 'Marks', align: 'right', render: (r) => `${r.marks}/${r.maxMarks}` },
-                { key: 'percent', header: 'Result', align: 'right', render: (r) => <Badge tone={marksTone(r.percent)}>{r.percent}%</Badge> },
-              ]}
-              rows={current.rows}
-            />
-          </>
-        )}
+        {current && <BarChart data={subjectChart} threshold={40} />}
       </Card>
+
+      {current && (
+        <div>
+          <div className="section-bar">
+            <h2 className="section-bar-title">Subject marks</h2>
+            <p className="section-bar-sub">Each subject against the 40% pass line</p>
+          </div>
+          {/* Cards rather than a table: the subject's pastel is the same one it
+              carries on the dashboard and on attendance, which is what ties the
+              three screens together. The precise numbers are still all here. */}
+          <div className="subject-grid">
+            {current.rows.map((r, i) => (
+              <SubjectCard
+                key={r.id}
+                index={i}
+                title={r.subject}
+                meta={<span className="mono">{r.code}</span>}
+                badge={<Badge tone={marksTone(r.percent)}>{r.percent}%</Badge>}
+              >
+                <div className="subject-card-meter">
+                  <Progress value={r.percent} tone={marksTone(r.percent)} />
+                  <span className="subject-card-count num">{r.marks} / {r.maxMarks}</span>
+                </div>
+              </SubjectCard>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

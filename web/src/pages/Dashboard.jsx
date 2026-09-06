@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api.js';
 import { useApi } from '../lib/useApi.js';
 import { useAuth } from '../lib/auth.jsx';
 import Icon from '../components/Icon.jsx';
+import SubjectRail, { CourseMeter } from '../components/SubjectRail.jsx';
+import { WeekStrip, weekdayIndex } from '../components/Calendar.jsx';
 import { Badge, Button, Card, EmptyState, ErrorNote, PageHead, Skeleton, SkeletonList, Stat } from '../components/ui.jsx';
 import { BarChart, Progress } from '../components/Charts.jsx';
-import { attendanceTone, formatDate, relative } from '../lib/format.js';
+import { DAYS, attendanceTone, formatDate, relative } from '../lib/format.js';
 
 function StatRow({ stats }) {
   return (
@@ -15,16 +18,10 @@ function StatRow({ stats }) {
   );
 }
 
-function TodaySchedule({ today, emptyBody }) {
-  if (!today?.day) {
-    return <EmptyState icon="calendar" title="No classes today" body="It’s a holiday or a non-instructional day." />;
-  }
-  if (!today.classes.length) {
-    return <EmptyState icon="calendar" title={`Nothing scheduled for ${today.day}`} body={emptyBody} />;
-  }
+function SessionList({ classes }) {
   return (
     <div className="slots">
-      {today.classes.map((c, i) => (
+      {classes.map((c, i) => (
         <div className={`slot${c.type === 'lab' ? ' slot-lab' : ''}`} key={i}>
           <span className="slot-time">
             <span className="slot-time-start">{c.startTime}</span>
@@ -41,9 +38,60 @@ function TodaySchedule({ today, emptyBody }) {
   );
 }
 
+function TodaySchedule({ today, emptyBody }) {
+  if (!today?.day) {
+    return <EmptyState icon="calendar" title="No classes today" body="It’s a holiday or a non-instructional day." />;
+  }
+  if (!today.classes.length) {
+    return <EmptyState icon="calendar" title={`Nothing scheduled for ${today.day}`} body={emptyBody} />;
+  }
+  return <SessionList classes={today.classes} />;
+}
+
+/* The reference's "Next Lessons" panel: pick a day on the strip, see that
+   day's sessions under it. The timetable repeats weekly, so a date maps to a
+   schedule through its weekday — DAYS runs Monday to Saturday, so Sunday
+   (index 6) correctly finds nothing. */
+function NextLessons() {
+  const [date, setDate] = useState(() => new Date());
+  const { data, loading } = useApi(() => api.timetable(), []);
+  const rows = data?.rows ?? [];
+
+  const dayName = DAYS[weekdayIndex(date)] ?? null;
+  const classes = dayName
+    ? rows.filter((r) => r.day === dayName).sort((a, b) => a.startTime.localeCompare(b.startTime))
+    : [];
+  const countFor = (d) => {
+    const name = DAYS[weekdayIndex(d)];
+    return name ? rows.filter((r) => r.day === name).length : 0;
+  };
+
+  const isToday = date.toDateString() === new Date().toDateString();
+
+  return (
+    <Card
+      title="Next lessons"
+      subtitle={isToday ? 'Today' : date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+      action={<Link to="/app/timetable"><Button size="sm" variant="ghost">Full timetable</Button></Link>}
+    >
+      <WeekStrip value={date} onChange={setDate} countFor={countFor} />
+      <div style={{ marginTop: 'var(--s4)' }}>
+        {loading
+          ? <SkeletonList rows={3} />
+          : classes.length
+            ? <SessionList classes={classes} />
+            : <EmptyState icon="calendar" title={dayName ? `Nothing on ${dayName}` : 'No classes on Sunday'} body="Pick another day on the strip above." />}
+      </div>
+    </Card>
+  );
+}
+
 /* ----------------------------------------------------------------- student */
 
 function StudentHome({ data, user }) {
+  const { data: attendance } = useApi(() => api.attendance(), []);
+  const subjects = attendance?.subjects ?? [];
+
   return (
     <>
       <PageHead
@@ -55,10 +103,21 @@ function StudentHome({ data, user }) {
       <div className="stack" style={{ gap: 'var(--s4)' }}>
         <StatRow stats={data.stats} />
 
+        <Card
+          title="My subjects"
+          subtitle="This semester, with where your attendance stands"
+          action={<Link to="/app/attendance"><Button size="sm" variant="ghost">Attendance</Button></Link>}
+        >
+          <SubjectRail
+            subjects={subjects}
+            meta={(sub) => `${sub.attended}/${sub.total} classes · ${sub.faculty ?? '—'}`}
+            footer={(sub) => <CourseMeter value={sub.percent} />}
+            emptyLabel="No subjects are mapped to your semester yet."
+          />
+        </Card>
+
         <div className="grid-2 grid-2-aside">
-          <Card title={`Today — ${data.today?.day ?? 'No classes'}`} subtitle="Your scheduled sessions">
-            <TodaySchedule today={data.today} emptyBody="Enjoy the free day." />
-          </Card>
+          <NextLessons />
 
           <Card title="Pending work" subtitle={data.pending.length ? `${data.pending.length} to submit` : 'Nothing outstanding'}>
             {data.pending.length === 0

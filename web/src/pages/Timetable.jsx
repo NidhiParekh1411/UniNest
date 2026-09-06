@@ -10,9 +10,27 @@ import { BRANCHES, BRANCH_NAMES, DAYS, SEMESTERS } from '../lib/format.js';
 // Sunday and correctly maps to no teaching day at all.
 const dayNameOf = (date) => DAYS[weekdayIndex(date)] ?? null;
 
-function SlotRow({ slot, showCohort }) {
+// "Now" and "Next", but only on today: a marker on Thursday's list while you
+// are looking at it on Tuesday would be a lie.
+function markSlots(slots, isToday) {
+  if (!isToday) return slots.map((slot) => ({ slot, mark: null }));
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const at = (hhmm) => {
+    const [h, m] = String(hhmm).split(':').map(Number);
+    return (h * 60) + (m || 0);
+  };
+  let nextTaken = false;
+  return slots.map((slot) => {
+    if (minutes >= at(slot.startTime) && minutes < at(slot.endTime)) return { slot, mark: 'now' };
+    if (!nextTaken && minutes < at(slot.startTime)) { nextTaken = true; return { slot, mark: 'next' }; }
+    return { slot, mark: minutes >= at(slot.endTime) ? 'done' : null };
+  });
+}
+
+function SlotRow({ slot, showCohort, mark }) {
   return (
-    <div className={`slot${slot.type === 'lab' ? ' slot-lab' : ''}`}>
+    <div className={`slot${slot.type === 'lab' ? ' slot-lab' : ''}${mark ? ` slot-${mark}` : ''}`}>
       <span className="slot-time">
         <span className="slot-time-start">{slot.startTime}</span>
         <span className="slot-time-end">{slot.endTime}</span>
@@ -25,6 +43,8 @@ function SlotRow({ slot, showCohort }) {
           {showCohort ? ` · ${slot.branch} sem ${slot.semester}` : ''}
         </span>
       </span>
+      {mark === 'now' && <Badge tone="lime">Now</Badge>}
+      {mark === 'next' && <Badge tone="sky">Next</Badge>}
       {slot.type === 'lab' && <Badge tone="lavender">Lab</Badge>}
     </div>
   );
@@ -70,6 +90,13 @@ export default function Timetable() {
 
   const isToday = sameDay(date, new Date());
 
+  // A dedicated tab can afford to say more than "here is your day".
+  const week = {
+    sessions: rows.length,
+    labs: rows.filter((r) => r.type === 'lab').length,
+    subjects: new Set(rows.map((r) => r.subjectId)).size,
+  };
+
   return (
     <div className="content">
       <PageHead
@@ -107,8 +134,15 @@ export default function Timetable() {
 
       {!loading && !error && view === 'day' && (
         <div className="split">
-          <div className="split-aside">
+          <div className="split-aside stack" style={{ gap: 'var(--s3)' }}>
             <Card tight><Calendar value={date} onChange={setDate} countFor={countFor} /></Card>
+            <Card tight title="This week" subtitle="Repeats every teaching week">
+              <dl className="viewer-facts">
+                <div><dt>Sessions</dt><dd className="num">{week.sessions}</dd></div>
+                <div><dt>Of which labs</dt><dd className="num">{week.labs}</dd></div>
+                <div><dt>Subjects</dt><dd className="num">{week.subjects}</dd></div>
+              </dl>
+            </Card>
           </div>
 
           <Card
@@ -129,7 +163,13 @@ export default function Timetable() {
                     : 'Pick a weekday to see the schedule for it.'}
                 />
               )
-              : <div className="slots">{selectedSlots.map((s, i) => <SlotRow key={i} slot={s} showCohort={mine} />)}</div>}
+              : (
+                <div className="slots">
+                  {markSlots(selectedSlots, isToday).map(({ slot, mark }, i) => (
+                    <SlotRow key={i} slot={slot} showCohort={mine} mark={mark} />
+                  ))}
+                </div>
+              )}
           </Card>
         </div>
       )}

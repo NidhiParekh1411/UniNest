@@ -2,9 +2,55 @@ import { useState } from 'react';
 import api from '../lib/api.js';
 import { useApi } from '../lib/useApi.js';
 import { useAuth } from '../lib/auth.jsx';
+import { SubjectCard } from '../components/SubjectRail.jsx';
 import { Badge, Card, EmptyState, ErrorNote, PageHead, SkeletonList, Table } from '../components/ui.jsx';
 import { BarChart, DonutChart, Progress } from '../components/Charts.jsx';
 import { attendanceTone, BRANCHES, BRANCH_NAMES, SEMESTERS, formatDate } from '../lib/format.js';
+
+/* The last ten marked sessions, as a row of squares.
+ *
+ * Two colour systems are at work on this screen and they mean different
+ * things. A subject's pastel is its *identity* — the same subject is the same
+ * colour here, on the dashboard rail and on its detail card — which is what
+ * stops a page of eight subjects reading as one undifferentiated block. The
+ * ok/warn/bad colours are its *status* against the 75% line, and they stay
+ * reserved for the number and the meter, where a reader is actually asking
+ * "am I short?". Mixing the two is what made everything look the same. */
+function RecentSessions({ sessions }) {
+  if (!sessions?.length) return null;
+  return (
+    <div className="recent">
+      <span className="eyebrow">Last {sessions.length}</span>
+      <span className="recent-dots">
+        {sessions.map((sess, i) => (
+          <span
+            key={i}
+            className={`recent-dot recent-${sess.status === 'present' ? 'present' : 'absent'}`}
+            title={`${formatDate(sess.date)} — ${sess.status}`}
+          />
+        ))}
+      </span>
+    </div>
+  );
+}
+
+function AttendanceCard({ subject, index }) {
+  const tone = attendanceTone(subject.percent);
+  return (
+    <SubjectCard
+      index={index}
+      title={subject.subject}
+      meta={<><span className="mono">{subject.code}</span>{subject.faculty ? ` · ${subject.faculty}` : ''}</>}
+      badge={<Badge tone={tone}>{subject.percent}%</Badge>}
+    >
+      <div className="subject-card-meter">
+        <Progress value={subject.percent} tone={tone} />
+        <span className="subject-card-count num">{subject.attended} of {subject.total}</span>
+      </div>
+      <RecentSessions sessions={subject.sessions} />
+    </SubjectCard>
+  );
+}
 
 function StudentView({ data }) {
   const chart = data.subjects.map((s) => ({ label: s.code.slice(-4), fullLabel: s.subject, value: s.percent }));
@@ -34,37 +80,15 @@ function StudentView({ data }) {
         </Card>
       </div>
 
-      <Card title="Subject detail" subtitle="Sessions attended, and the last ten marked">
-        {data.subjects.map((s) => (
-          <div key={s.id} style={{ paddingBottom: 'var(--s4)', marginBottom: 'var(--s4)', borderBottom: '1px solid var(--border)' }}>
-            <div className="row-between" style={{ marginBottom: 'var(--s2)' }}>
-              <span>
-                <span className="list-title">{s.subject}</span>
-                <span className="list-meta"><span className="mono">{s.code}</span> · {s.attended} of {s.total} sessions</span>
-              </span>
-              <Badge tone={attendanceTone(s.percent)}>{s.percent}%</Badge>
-            </div>
-            <Progress value={s.percent} tone={attendanceTone(s.percent)} />
-            {s.sessions?.length > 0 && (
-              <div className="row" style={{ gap: 4, marginTop: 'var(--s3)' }}>
-                <span className="eyebrow" style={{ marginRight: 4 }}>Recent</span>
-                {s.sessions.map((sess, i) => (
-                  <span
-                    key={i}
-                    title={`${formatDate(sess.date)} — ${sess.status}`}
-                    style={{
-                      width: 15, height: 15, borderRadius: 4,
-                      background: sess.status === 'present' ? 'var(--ok-soft)' : 'var(--bad-soft)',
-                      border: `1px solid ${sess.status === 'present' ? 'var(--ok)' : 'var(--bad)'}`,
-                      opacity: 0.75,
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </Card>
+      <div>
+        <div className="section-bar">
+          <h2 className="section-bar-title">Subject detail</h2>
+          <p className="section-bar-sub">Sessions attended, and the last ten marked</p>
+        </div>
+        <div className="subject-grid">
+          {data.subjects.map((s, i) => <AttendanceCard key={s.id} subject={s} index={i} />)}
+        </div>
+      </div>
     </div>
   );
 }

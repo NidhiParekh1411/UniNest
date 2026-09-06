@@ -714,6 +714,10 @@
   background: var(--sky-2);
 }
 .slot-lab::before { background: var(--lavender-2); }
+/* Where the day has got to. Only ever applied to today's list. */
+.slot-now { background: var(--lime-soft); border-radius: var(--r-sm); }
+.slot-now::before { background: var(--ink); width: 4px; }
+.slot-done { opacity: 0.5; }
 .slot-time {
   display: flex; flex-direction: column;
   font-family: var(--font-mono); font-size: var(--fs-2xs);
@@ -1252,6 +1256,98 @@
 .step-title { font-size: var(--fs-lg); font-weight: 800; letter-spacing: -0.025em; }
 .step-body { font-size: var(--fs-sm); color: var(--text-2); margin: var(--s2) 0 0; line-height: 1.65; }
 
+/* --- a section heading that is not a card ------------------------------
+   Used where a group of cards needs a title but wrapping them in another card
+   would nest a surface inside a surface. */
+
+.section-bar { margin-bottom: var(--s4); }
+.section-bar-title { font-size: var(--fs-lg); font-weight: 800; letter-spacing: -0.025em; }
+.section-bar-sub { font-size: var(--fs-sm); color: var(--text-3); margin: 3px 0 0; }
+
+/* --- per-subject cards --------------------------------------------------
+   The pastel is the subject's identity, carried over from the dashboard rail.
+   Status against the 75% line stays on the badge and the meter, which is
+   where a reader actually looks for it. */
+
+.subject-grid { display: grid; grid-template-columns: 1fr; gap: var(--s3); }
+.subject-card {
+  background: var(--tone-soft, var(--surface));
+  border: 1px solid var(--tone, var(--border));
+  border-radius: var(--r-lg);
+  padding: var(--s4);
+}
+.subject-card-head { display: flex; align-items: flex-start; gap: var(--s3); }
+.subject-card-title { font-size: var(--fs-md); font-weight: 800; letter-spacing: -0.02em; line-height: 1.3; }
+.subject-card-meta { font-size: var(--fs-xs); color: var(--text-2); margin: 3px 0 0; }
+.subject-card-meter { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s4); }
+.subject-card-meter > :first-child { flex: 1; }
+.subject-card-count { font-size: var(--fs-xs); color: var(--text-2); white-space: nowrap; }
+
+.recent { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s4); flex-wrap: wrap; }
+.recent-dots { display: flex; gap: 4px; }
+.recent-dot { width: 14px; height: 14px; border-radius: 4px; }
+.recent-present { background: var(--lime-2); }
+.recent-absent { background: var(--bad-soft); box-shadow: inset 0 0 0 1.5px var(--bad); }
+
+/* --- the subject rail --------------------------------------------------
+   college_ref(2)'s course row. Horizontal scroll with snap, and the same edge
+   fade as the marquee so the row dissolves rather than being clipped. */
+
+.rail {
+  margin-inline: calc(var(--s5) * -1);
+  padding-inline: var(--s5);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-mask-image: var(--fade-x-surface);
+  mask-image: var(--fade-x-surface);
+}
+.rail::-webkit-scrollbar { display: none; }
+.rail-track { display: flex; gap: var(--s3); padding-block: 2px; width: max-content; }
+
+.course {
+  display: flex; flex-direction: column;
+  width: 232px; min-height: 168px;
+  padding: var(--s4);
+  border: none; text-align: left;
+  border-radius: var(--r-lg);
+  background: var(--tone, var(--surface-2));
+  color: var(--ink);
+  scroll-snap-align: start;
+  transition: transform var(--t-fast);
+}
+button.course { cursor: pointer; }
+@media (hover: hover) { button.course:hover { transform: translateY(-2px); } }
+
+.course-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  align-self: flex-start;
+  padding: 4px var(--s2);
+  border-radius: var(--r-full);
+  background: rgb(255 255 255 / 0.72);
+  font-size: var(--fs-2xs); font-weight: 700;
+  margin-bottom: var(--s4);
+}
+.course-title {
+  font-size: var(--fs-lg); font-weight: 800;
+  letter-spacing: -0.025em; line-height: 1.25;
+  /* Two lines, then ellipsis: a long subject name must not change the card's
+     height, or the whole rail steps up and down as you scroll it. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.course-meta {
+  font-size: var(--fs-xs);
+  color: var(--ink);
+  opacity: 0.66;
+  margin-top: var(--s2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.course-meter { display: flex; align-items: center; gap: var(--s3); margin-top: auto; padding-top: var(--s4); }
+.course-meter-track { flex: 1; height: 7px; border-radius: var(--r-full); background: rgb(255 255 255 / 0.6); overflow: hidden; }
+.course-meter-fill { display: block; height: 100%; border-radius: var(--r-full); background: var(--ink); }
+.course-meter-value { font-size: var(--fs-xs); font-weight: 800; font-variant-numeric: tabular-nums; }
+
 /* --- document viewer ----------------------------------------------------
    A Preview-style split: the document on the left, what the model read out of
    it on the right. It is deliberately bigger than a dialog — you are reading a
@@ -1698,6 +1794,7 @@
   /* True masonry, by columns rather than grid: the cells keep their natural
      heights and flow down each column, so nothing is clipped and nothing has
      to be measured. Grid cannot do this without fixed row heights. */
+  .subject-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mason { display: block; column-count: 2; column-gap: var(--s4); }
   .mason-cell { display: block; break-inside: avoid; margin-bottom: var(--s4); }
   .mason-cell > .feature { height: auto; }
