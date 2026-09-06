@@ -19,11 +19,14 @@ Full rationale lives in `docs/UI_GUIDE.md`. This is the working checklist.
 >
 > - **Gradients exist again**, in one role only — see "Where a gradient is
 >   allowed" below.
-> - **One loop exists**: the landing page's step ribbon. See "Motion".
+> - **Nothing loops.** The step ribbon that was the one exception is gone —
+>   the six steps sit on a static arc now (`components/ArcSteps.jsx`).
 > - **The brand mark is an owl**, not a ghost. `components/Logo.jsx` is the
 >   glyph, `web/public/brand/*.webp` is the illustrated mascot, and
 >   `<Mascot>` renders the latter.
 > - **Photographs are used**, from `web/public/img/`. See `docs/IMAGES.md`.
+> - **White text exists**, but only over a photograph, and only through
+>   `--on-photo` / `--on-photo-2` with `--veil-photo*` underneath it.
 
 ## Before you write a component
 
@@ -32,9 +35,9 @@ Full rationale lives in `docs/UI_GUIDE.md`. This is the working checklist.
 2. Check `web/src/components/` — the primitive probably exists:
    `Button` `Card` `Stat` `Badge` `Note` `Field` `Table` `Modal` `Tabs`
    `PageHead` `EmptyState` `Skeleton` `FilePicker` `Calendar` `WeekStrip`
-   `Logo` `Mascot` `Icon` `Marquee` `SubjectRail` `SubjectCard` `CourseMeter`
-   `DocumentViewer` `BarChart` `LineChart` `DonutChart` `Progress` `Reveal`
-   `Counter` `Frame` `JourneyPath`.
+   `Logo` `Mascot` `Icon` `ArcSteps` `PhotoFan` `SubjectRail` `SubjectCard`
+   `CourseMeter` `DocumentViewer` `Refreshed` `BarChart` `LineChart`
+   `DonutChart` `Ring` `Progress` `Reveal` `Counter` `Frame` `JourneyPath`.
 3. Build the 375px layout first, then widen.
 
 ## The palette, and what each colour means
@@ -63,11 +66,28 @@ Four pastel families, opted into with `.tone-lime` / `-lavender` / `-peach` /
 - **`--s5` (24px) is the default padding and gap.** Reaching for `--s3` is why
   a screen ends up feeling cramped.
 - **A gradient is never a surface.** See below.
-- **Nothing loops except the ribbon.** No float, drift or pulse.
+- **Nothing loops.** No float, drift, marquee or pulse. Motion is a response
+  to something the reader did.
+- **Colour identifies a subject; it does not fill its card.** A subject's
+  pastel is a 5px rail down the edge of a white card plus a tint behind its
+  code — see `.subject-card`. Filling the card was tried and reverted: five
+  subjects meant five washes of colour and every screen looked the same.
+- **A skeleton is only for a screen with nothing on it.** `useApi` distinguishes
+  `loading` (nothing yet) from `refreshing` (checking for newer). A refetch
+  updates in place through `Refreshed`; it never blanks the page.
 - **Nothing renders initials as a logo.** The brand mark is the owl in
   `components/Logo.jsx`.
-- **Cards do not cast shadows.** Only the modal, drawer, dropdown and
-  back-to-top do; a card gets a 1px `--border`.
+- **Cards do not cast shadows.** Only the modal, drawer, dropdown,
+  back-to-top, an open arc step and a fanned photograph do; a card gets a 1px
+  `--border`.
+- **A heading with a `.mark` uses `--mark-lh`.** The highlighter is drawn at the
+  height of the font's content area no matter what `line-height` says, so
+  tighter leading puts the lime block on the line above. This was a real,
+  reported bug.
+- **`mask-image` reads alpha, not colour.** An edge fade written as a mask goes
+  transparent → opaque → transparent (`--fade-x-mask`). Writing it the way you
+  would write a paint gradient inverts it and erases the middle of the strip.
+  This was also a real, reported bug — twice, in two components.
 
 ## Where a gradient is allowed
 
@@ -81,22 +101,31 @@ the four pastel families so a wash cannot introduce a new colour:
   gradient is unreadable.
 - `--grad-dusk` — an ink panel that needs depth. Currently unused.
 
-Plus `--fade-x-bg` / `--fade-x-surface`, which are masks rather than paint:
-they dissolve a horizontally scrolling strip into its background instead of
-cutting it off. Match the one to whatever the strip sits on.
+Plus `--fade-x-mask`, which dissolves a horizontally scrolling strip into its
+background instead of cutting it off. **It is a mask: only alpha counts**, so
+its stops run transparent → opaque → transparent. Written the way a paint
+gradient would be (page colour at the ends, clear in the middle) it inverts and
+erases the middle of the strip — which is what emptied the step ribbon and the
+whole "My subjects" rail at once.
+
+Plus `--veil-photo` / `--veil-photo-strong`, which darken the foot of a
+photograph so a caption can stand on it. They are the only reason `--on-photo`
+exists.
 
 If you can see where a gradient starts and stops, it is being used wrongly.
 
 ## Motion
 
-Short, mostly opacity and position. Two things are allowed to repeat:
+Short, mostly opacity and position. Nothing loops while idle. The one thing
+allowed to repeat is **a spinner**, while something is genuinely loading.
 
-- **The step ribbon** on the landing page (`components/Marquee.jsx`). It holds
-  its children twice and animates to `-50%`, so the loop is seamless with no
-  measuring. It pauses on hover and on focus-within, and under
-  `prefers-reduced-motion` the animation is dropped and it becomes an ordinary
-  horizontal scroller — the global reduce rule alone would park it at -50%.
-- **A spinner**, while something is genuinely loading.
+The step ribbon used to be a second exception and is not any more: a diagram of
+a six-step process is meant to be read, and a conveyor belt means the step you
+want is always the one sliding away. `components/ArcSteps.jsx` lays the six
+cards on a static arc instead.
+
+`swapIn` is the entrance `Refreshed` replays when a screen's data is replaced
+behind a background refresh — see "Loading versus refreshing".
 
 Staggered entrances (`riseInSoft`) are for a list that arrives as a group —
 the assistant's suggestions. Each child sets `--i`; the delay is capped so a
@@ -115,6 +144,21 @@ long list never keeps the reader waiting.
 Painting the whole card by status was the fault the owner reported as
 "similar colour everywhere": nearly everything is above the line, so nearly
 everything was the same green.
+
+**And identity gets a rail, not a fill.** Swapping status for identity but
+keeping the pastel as the card's background was the second version of the same
+mistake — five subjects meant five washes of colour and every screen looked
+alike. The card is white with a 5px rail of the subject's colour and a tint
+behind its code.
+
+## Loading versus refreshing
+
+`loading` from `useApi` means "nothing has ever arrived" and goes false for
+good after the first response. `refreshing` covers every fetch after it: old
+data stays on screen, new data replaces it, and `Refreshed` replays `swapIn`
+without remounting — so an open tab or a half-typed field survives. Never show
+a skeleton on a refetch; that is what made closing the document viewer look
+like a page reload.
 
 ## Overlays must be portalled
 

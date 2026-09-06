@@ -1576,7 +1576,6 @@ button.course { cursor: pointer; }
   border-radius: var(--r-lg);
   background: var(--tone-soft, var(--surface));
   color: var(--ink);
-  font: inherit;
   cursor: pointer;
   transition: transform var(--t), box-shadow var(--t), background var(--t);
 }

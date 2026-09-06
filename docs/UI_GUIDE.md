@@ -11,10 +11,14 @@ stylesheet is right and this file is stale — fix it.
 > `college_ref(1)` carries the literal palette and typeface.
 >
 > **Revised later the same day**, from `college_ref(2)` and `(6)`–`(11)`, on
-> the owner's instruction. Three rules below were relaxed on purpose and are
-> not oversights: gradients are permitted in one narrowly defined role, one
-> animation is permitted to loop, and the brand mark is now an owl. Each is
-> marked **Revised** where it appears.
+> the owner's instruction. Two rules below were relaxed on purpose and are not
+> oversights: gradients are permitted in one narrowly defined role, and the
+> brand mark is now an owl. Each is marked **Revised** where it appears.
+>
+> **Revised again 6 September 2026**, after the owner reviewed it on screen.
+> The looping ribbon is gone — nothing loops again — the feature grid is
+> photographs, and the subject pastel is a rail rather than a fill. The
+> reasoning for each is in the section it belongs to.
 
 ---
 
@@ -152,27 +156,30 @@ Not allowed: anything that loops *while idle*. No `float`, no `drift`, no
 `pulseRing`, no rotating logo. Those keyframes were deleted, not merely unused
 — if you find yourself writing one, that is the signal to stop.
 
-**Revised.** Two things are allowed to repeat, because in both cases the motion
-*is* the content rather than an ornament on it:
+One exception: **a spinner**, while something is genuinely loading. It is
+ornament if you reach for it anywhere else.
 
-- **The step ribbon** on the landing page (`components/Marquee.jsx`). It is
-  explicitly a moving strip of cards, requested as such. It holds its children
-  twice and animates to `-50%`, so the loop is seamless with no measurement and
-  no per-frame JavaScript. It pauses on hover and on `:focus-within`, so a
-  reader can stop it just by pointing at it.
-- **A spinner**, while something is genuinely loading.
-
-Both are still ornament if you reach for them anywhere else.
+The step ribbon on the landing page used to be a second exception — a strip of
+cards that scrolled itself, holding its children twice and animating to `-50%`
+for a seamless loop. It is gone. Two things were wrong with it. Its edge mask
+was inverted, so the middle of the section was permanently blank (see
+"Gradients" below); and more fundamentally, a diagram explaining a six-step
+process is something a reader wants to *read*, and putting it on a conveyor
+belt means the step you want is always the one sliding away. The six steps sit
+on a static arc now — `components/ArcSteps.jsx` — with each card pushed down by
+a parabola of its index. Nothing moves until you point at it.
 
 Staggered entrances use `riseInSoft`, for a list that arrives as a group — the
 assistant's suggestions and starters. Each child sets `--i` inline and the
 delay is `min(var(--i) * 45ms, 400ms)`, so a long list never keeps the reader
 waiting on the last row.
 
-Everything is disabled under `prefers-reduced-motion`. Note that the global
-reduce rule forces `animation-iteration-count: 1`, which would park the ribbon
-at `-50%` — so the ribbon drops its animation outright and becomes an ordinary
-horizontal scroller instead.
+There is one more entrance, `swapIn`, used by `Refreshed` (`components/ui.jsx`)
+when a screen's data is replaced behind a background refresh. It exists because
+the alternative — blanking the screen back to a skeleton on every refetch — read
+as a page reload. See "Loading versus refreshing".
+
+Everything is disabled under `prefers-reduced-motion`.
 
 ---
 
@@ -195,10 +202,20 @@ The composer sitting *on* `--grad-aurora` stays a solid white block. An input
 on a gradient is unreadable, and that is not a trade worth making for a page
 that exists to be typed into.
 
-`--fade-x-bg` and `--fade-x-surface` are masks rather than paint: they dissolve
-a horizontally scrolling strip into its background instead of cutting it off at
-a hard edge. Match the one to whatever the strip actually sits on — that is
-what `.marquee-on-surface` exists for.
+`--fade-x-mask` dissolves a horizontally scrolling strip into its background
+instead of cutting it off at a hard edge. **It is a mask, and a mask reads the
+alpha channel only** — its stops go transparent → opaque → transparent. Writing
+it the way you would write a paint gradient (page colour at the ends, clear in
+the middle) inverts the whole effect: the ends survive and the middle is
+erased. That is exactly what happened, in two components at once — the centre
+of the step ribbon and the entire "My subjects" rail on the dashboard both went
+blank, and it looked like two unrelated bugs. There is one token, and it is
+named for what it is.
+
+Two more gradients earn their place: `--veil-photo` and `--veil-photo-strong`,
+which darken the foot of a photograph so a caption can stand on it. They are
+the only reason `--on-photo` (white text) exists in a system that otherwise has
+none.
 
 ---
 
@@ -219,6 +236,32 @@ The fault was painting the entire card by status. Nearly every subject is above
 the line, so nearly every card was the same green, and the colour carried no
 information at the moment you looked at the page.
 
+**How much colour** turned out to be a second, separate mistake. The first fix
+swapped status for identity but kept the pastel as the card's *fill*, which put
+five large washes of colour on a warm-grey page and made attendance, results
+and the dashboard all read as the same screen. Identity needs far less than
+that: the card is white with a 5px rail of the subject's colour down its edge
+and a tint behind its code. That is enough to tell two subjects apart at a
+glance and not enough to become the design.
+
+---
+
+## Loading versus refreshing
+
+A skeleton belongs on a screen that has nothing on it. It does not belong on a
+screen that already has content and is checking for newer content.
+
+`useApi` (`lib/useApi.js`) draws that line. `loading` means "nothing has ever
+arrived" and goes false for good after the first response. `refreshing` covers
+every fetch after that: the old data stays on screen, the new data replaces it
+when it lands, and `Refreshed` replays a soft entrance on the swap **without
+remounting the subtree** — so an open tab, a scroll position or a half-typed
+field survives the refresh.
+
+The symptom that produced this rule: closing the document viewer refetched the
+library, which blanked the whole list back to shimmer bars and rebuilt it. It
+looked like the page had reloaded.
+
 ---
 
 ## Components
@@ -227,9 +270,9 @@ Primitives live in `web/src/components/`. Check before you write:
 
 `Button` `Card` `Stat` `Badge` `Note` `Field` `Table` `Modal` `Tabs`
 `PageHead` `EmptyState` `Skeleton` `FilePicker` `Calendar` `WeekStrip`
-`Logo` `Mascot` `Icon` `Marquee` `SubjectRail` `SubjectCard` `CourseMeter`
-`DocumentViewer` `BarChart` `LineChart` `DonutChart` `Progress` `Reveal`
-`Counter` `Frame` `JourneyPath`.
+`Logo` `Mascot` `Icon` `ArcSteps` `PhotoFan` `SubjectRail` `SubjectCard`
+`CourseMeter` `DocumentViewer` `Refreshed` `BarChart` `LineChart` `DonutChart`
+`Ring` `Progress` `Reveal` `Counter` `Frame` `JourneyPath`.
 
 ### The brand mark — **Revised**
 

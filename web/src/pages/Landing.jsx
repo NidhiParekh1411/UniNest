@@ -144,6 +144,10 @@ function Features() {
         <div className="mason">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={i * 50} className="mason-cell">
+              {/* Focusable on purpose. The body is revealed by `:hover` and
+                  `:focus-within`, and there is nothing inside the tile to
+                  focus — so without this a keyboard reader could never open
+                  one. */}
               <article className={`tile tile-${f.shape}`} tabIndex={0}>
                 <img className="tile-photo" src={f.image} alt={f.imageAlt} loading="lazy" decoding="async" />
                 <div className="tile-text">

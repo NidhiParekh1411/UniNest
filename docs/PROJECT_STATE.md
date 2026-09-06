@@ -444,45 +444,108 @@ by the dashboard rail, the attendance grid and the results grid.
 listing the three rules that were deliberately relaxed — read them before
 "fixing" a gradient or the marquee back out.
 
+### 6 September 2026 — the owner reviewed it on screen
+
+The first review with actual screenshots (`Issues/`). Two of the complaints
+turned out to be one bug, and it is worth knowing which.
+
+**The inverted edge mask.** `--fade-x-bg` / `--fade-x-surface` were written as
+*paint* gradients — page colour at the ends, transparent in the middle — and
+then used as `mask-image`, where only the alpha channel counts and colour is
+ignored entirely. The mask was therefore exactly backwards: it kept the ends
+and erased the middle. That is the white block in the centre of the landing
+page's step ribbon **and** the reason the dashboard's whole "My subjects" rail
+looked like an empty white band. They were reported as two unrelated problems.
+There is one token now, `--fade-x-mask`, and the comment on it says why.
+
+**The highlighter over the line above.** An inline element's background covers
+its *content area*, whose height comes from the font's own ascent and descent —
+about 1.3em for Manrope — and no `line-height` shrinks it. `.hero-title` was at
+1.18, so the lime block sat on the descenders above it. Leading for a marked
+heading comes from `--mark-lh` (1.44) now.
+
+Everything else that changed:
+
+- **The step ribbon is gone.** Six cards on a static arc instead
+  (`components/ArcSteps.jsx`), each pushed down by a parabola of its index. The
+  body arrives on hover, on focus and on tap, absolutely positioned so opening
+  one cannot move its neighbours. Nothing in the system loops again;
+  `@keyframes marquee` was deleted with its only caller.
+- **The feature grid is photographs.** Each tile is a picture with a veil that
+  darkens towards its foot, the title on the dark, and the body revealed on
+  hover. Where there is no pointer, the body is simply always shown.
+- **The subject pastel is a rail, not a fill.** This is the second correction to
+  the same thing: the previous session moved colour from *status* to
+  *identity*, which was right, but kept it as the card's background — so five
+  subjects meant five washes of colour and attendance, results and the
+  dashboard all read as the same screen. White card, 5px rail, tinted code.
+- **Loading versus refreshing.** `useApi` now distinguishes "nothing has ever
+  arrived" from "checking for newer". A refetch keeps the old content on screen
+  and swaps it with a soft entrance via `Refreshed`, which does not remount —
+  so an open tab or a half-typed field survives. Closing the document viewer
+  used to blank the entire library back to skeletons and rebuild it.
+- **Sign-in is the whole window**, with the owl centred in one half against the
+  form in the other, instead of a card floating in an empty page.
+- **The About page** had two empty halves (the hero and the history timeline);
+  both now carry photographs. The subscribe box at its foot did nothing when
+  submitted and is a closing panel with the three mascots instead.
+- **The assistant's attendance answer** is a ring per subject with the number
+  in the middle, not a stack of near-identical progress bars.
+- **Dashboard notices** carried a chevron but were not links. They are now.
+- **"Next lessons"** has a fixed-height pane, and its grid row aligns to
+  `start` — picking a day with six lectures used to resize the card and, through
+  the stretched row, the empty "Pending work" card beside it.
+- **All three mascot artworks** still had opaque white where the backdrop had
+  been keyed out — invisible on white, a grey smudge on anything else. Keyed
+  properly by flooding from the image borders.
+
+### On the document analysis: it is cached, not re-billed
+
+Asked directly, so recorded here. Opening a document in the viewer calls
+`GET /api/documents/:id`, which reads `doc.analysis` out of the database. **No
+model call.** Gemini is called exactly twice in a document's life: once in the
+background right after upload (`enrichInBackground`), and again only if someone
+presses **Analyse again**, which posts to `/:id/analyse` with `force: true`.
+`enrichDocument` returns early when `analysis.status === 'ready'` and `force` is
+not set, so even a stray call costs nothing.
+
 ### Tests after this session
 
-- `npm run smoke` — **50 passed, 1 failed**. Same single failure as before
-  (`found ungraded submission to grade (none in seed)`), unrelated to this
-  work; the live dataset has no ungraded submission left because earlier runs
-  graded them all. Reseeding clears it.
-- `npm run eval` — **24/26**, up from 23/26, because the two newly transcribed
-  uploads added corpus text. The remaining failures are document-retrieval
-  cases that predate this session.
+- `npm run smoke` — **50 passed, 1 failed**. Same single pre-existing failure
+  (`found ungraded submission to grade (none in seed)`): the live dataset has
+  no ungraded submission left because earlier runs graded them all. Reseeding
+  clears it.
+- `npm run eval` — **25/26**, up from 24/26.
+- Every page was rendered server-side through `react-dom/server` with a stubbed
+  auth context, which is how a JSX mistake that turns a ternary into literal
+  page text gets caught without a browser. All thirteen render clean.
 
 ### Still not verified: how it looks
 
-**No browser was available this session either.** Everything below is
-structural: the production build is clean, every class used in JSX resolves to
-a rule, every `var(--token)` resolves, there are no unused imports, and the new
-endpoints were exercised with curl against the running server.
+**There was still no browser this session.** The checks above are structural
+and behavioural, not visual. Open it at 375 / 768 / 1440 and look at the new
+geometry first:
 
-Structural checks cannot see an ugly layout. **Open it at 375 / 768 / 1440**
-and look at these first, because they are new geometry rather than restyled
-markup:
-
-- The **hero photo fan** — three absolutely-positioned rotated cards. Most
-  likely to collide or overflow at 375px.
-- The **step ribbon**. Check that the loop seam is invisible and that it pauses
-  on hover.
-- The **masonry** at 720–900px, where it switches to two columns.
-- The **document viewer** — it is a full-height overlay below 900px and a
-  side-by-side split above it. Open a PDF, an image, and a Word file.
-- The **sign-in split** at the 900px boundary, where the aside becomes a
-  banner.
+- The **arc** at 900–1200px. Six cards across a wrapper is tight; the end cards
+  open their panel inwards so it cannot leave the page, and that is the part
+  most likely to look wrong.
+- The **photo tiles** at 720px, where the masonry goes to two columns, and the
+  hover reveal (`max-height: 14em`) against the longest body text.
+- The **curved photo stack** beside the history timeline — it reserves its own
+  height with `padding-bottom: 128%`, which is arithmetic, not observation.
+- The **sign-in** now that it is full-bleed: both halves scroll independently,
+  so check the form at a short viewport.
+- The **subject rail and cards** — the point of the change is that five
+  subjects no longer read as one block. That is a judgement only you can make.
 
 ### Next task
 
 1. **Look at all of this in a browser** at 375 / 768 / 1440.
-2. **Attendance marking and result entry screens.** Unchanged from before: the
-   API is built and tested, so it is UI work against known contracts, and it
-   removes the most obvious "this is a demo" gap. Build it against the new
-   design system — read `docs/UI_GUIDE.md` first, not your memory of it.
-3. **The remaining failing eval cases**, which predate this session.
+2. **Attendance marking and result entry screens.** Unchanged: the API is built
+   and tested, so it is UI work against known contracts, and it removes the
+   most obvious "this is a demo" gap. Read `docs/UI_GUIDE.md` first, not your
+   memory of it — it was revised again this session.
+3. **The remaining failing eval case**, which predates this session.
 4. **Consider a paid Gemini tier or a lighter model** if the free daily
    allowance keeps running out mid-demo. `gemini-flash-lite-latest` and
    `gemini-3.1-flash-lite` both had quota available when this was written.

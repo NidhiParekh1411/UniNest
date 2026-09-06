@@ -5,3 +5,6 @@ dist/
 server/data/*.json
 server/data/uploads/*
 !server/data/uploads/.gitkeep
+
+# The owner's review screenshots — working material, not part of the build.
+Issues/
