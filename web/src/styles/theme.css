@@ -84,7 +84,7 @@
   /* --- atmospheric washes -----------------------------------------------
      Gradients are allowed in exactly one role: a large, soft, out-of-focus
      wash *behind* a surface — the sign-in panel, the bloom under the chat
-     composer, the marquee's edge fades. They are never a button, a card, a
+     composer, the veil under a photo caption. They are never a button, a card, a
      border or text. Every stop is mixed from the four pastel families, so a
      wash cannot introduce a colour the palette does not already have.
 
@@ -104,10 +104,39 @@
     radial-gradient(90% 70% at 20% 0%, #33363c 0%, rgb(51 54 60 / 0) 60%),
     radial-gradient(80% 60% at 92% 8%, #2a2d33 0%, rgb(42 45 51 / 0) 58%),
     linear-gradient(180deg, var(--ink-2) 0%, var(--ink) 100%);
+  /* Photo veils. A photograph is not a background until something makes its
+     bottom edge dark enough to carry text, and "dark enough" is not a constant
+     — a caption that is one line needs less than one that expands on hover. So
+     there are two, and a tile swaps between them rather than stacking a second
+     layer.
+
+     These are the only place white text appears on the public site, which is
+     why --on-photo lives here beside them rather than with the text colours. */
+  --veil-photo: linear-gradient(180deg, rgb(20 21 24 / 0) 22%, rgb(20 21 24 / 0.42) 56%, rgb(20 21 24 / 0.86) 100%);
+  --veil-photo-strong: linear-gradient(180deg, rgb(20 21 24 / 0.08) 0%, rgb(20 21 24 / 0.62) 44%, rgb(20 21 24 / 0.95) 100%);
+  --on-photo: #ffffff;
+  --on-photo-2: rgb(255 255 255 / 0.84);
+
   /* Edge fades for horizontally scrolling strips — the track dissolves into
-     the ground instead of being cut off by a hard border. */
-  --fade-x-bg: linear-gradient(90deg, var(--bg) 0%, rgb(245 245 244 / 0) 8%, rgb(245 245 244 / 0) 92%, var(--bg) 100%);
-  --fade-x-surface: linear-gradient(90deg, var(--surface) 0%, rgb(255 255 255 / 0) 8%, rgb(255 255 255 / 0) 92%, var(--surface) 100%);
+     the ground instead of being cut off by a hard border.
+     
+     There are two of these because there are two ways to draw the effect and
+     they are exact opposites of each other:
+     
+       --fade-x-paint  is laid OVER the strip as a background. It is the page
+                       colour at the edges and transparent in the middle, so it
+                       hides the ends and lets the middle through.
+       --fade-x-mask   is a `mask-image`, where only the ALPHA channel counts
+                       and colour is ignored entirely. It must therefore be
+                       transparent at the edges and opaque in the middle.
+     
+     Using the paint version as a mask inverts the effect: the ends stay and
+     the middle is erased. That is what emptied the centre of the step ribbon
+     and made the whole "My subjects" rail look like a blank white band. If you
+     are writing `mask-image`, you want `--fade-x-mask`. */
+  --fade-x-mask: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 1) 7%, rgb(0 0 0 / 1) 93%, rgb(0 0 0 / 0) 100%);
+  --fade-x-paint-bg: linear-gradient(90deg, var(--bg) 0%, rgb(245 245 244 / 0) 8%, rgb(245 245 244 / 0) 92%, var(--bg) 100%);
+  --fade-x-paint-surface: linear-gradient(90deg, var(--surface) 0%, rgb(255 255 255 / 0) 8%, rgb(255 255 255 / 0) 92%, var(--surface) 100%);
 
   /* --- semantic --------------------------------------------------------- */
   --ok: #2f7a4d;
@@ -120,6 +149,12 @@
   /* --- type -------------------------------------------------------------
      One family. Weight and size carry the hierarchy; there is no display
      face and no secondary UI face to keep in sync.                         */
+  /* Leading for a heading that carries a `.mark` highlighter. The lime band is
+     drawn at the height of the font's content area (~1.3em) regardless of
+     line-height, so this has to clear that or the band lands on the line
+     above. It is a token because two pages set it and both must agree. */
+  --mark-lh: 1.44;
+
   --font: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
 
@@ -232,12 +267,6 @@ img { max-width: 100%; display: block; }
 @keyframes popIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 @keyframes bounce { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
-
-/* The one looping animation in the system. A marquee is legitimate for a strip
-   that is explicitly a moving ribbon of content; it is not legitimate as
-   decoration on a static block. It pauses on hover and on focus-within so a
-   reader can stop it, and stops entirely under reduced-motion. */
-@keyframes marquee { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
 
 /* Staggered entrance for a list that appears as a group — the assistant's
    suggestion chips. Each child sets its own --i. */

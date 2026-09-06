@@ -34,6 +34,20 @@ export const HERO_PHOTOS = [
   { src: '/img/study-group.webp', alt: 'Students working together around a table', lift: -6 },
 ];
 
+// The About hero's fan, and the column of photographs beside the timeline —
+// different pictures from the landing hero so the two pages do not repeat.
+export const ABOUT_PHOTOS = [
+  { src: '/img/campus-autumn.webp', alt: 'Campus buildings under autumn trees' },
+  { src: '/img/campus-arch.webp', alt: 'The arched entrance to a college campus' },
+  { src: '/img/lecture-hall.webp', alt: 'An empty lecture hall before a class' },
+];
+
+export const HISTORY_PHOTOS = [
+  { src: '/img/campus-tower.webp', alt: 'A university clocktower against a blue sky' },
+  { src: '/img/reading.webp', alt: 'A student reading at a desk' },
+  { src: '/img/study-floor.webp', alt: 'Students working on a library floor' },
+];
+
 export const HERO_STATS = [
   { value: 3, suffix: '', label: 'Roles, each scoped server-side' },
   { value: 117, suffix: '', label: 'Subjects across 3 branches' },
@@ -45,7 +59,7 @@ export const FEATURES = [
   {
     icon: 'sparkle',
     tone: 'lime',
-    span: 'tall',
+    shape: 'tall',
     image: '/img/writing-notes.webp',
     imageAlt: 'A hand writing notes on ruled paper',
     title: 'Answers you can check',
@@ -54,14 +68,16 @@ export const FEATURES = [
   {
     icon: 'calendar',
     tone: 'lavender',
-    span: 'short',
+    shape: 'short',
+    image: '/img/notebook.webp',
+    imageAlt: 'An open notebook and pen on a desk',
     title: 'Your timetable, not a generic one',
     body: 'Scoped to your branch, semester and lab batch from your account — so “when is my next lab” has exactly one correct answer.',
   },
   {
     icon: 'chart',
     tone: 'peach',
-    span: 'wide',
+    shape: 'wide',
     image: '/img/exam-sheet.webp',
     imageAlt: 'A pencil resting on an answer sheet',
     title: 'Attendance against the 75% line',
@@ -70,14 +86,16 @@ export const FEATURES = [
   {
     icon: 'upload',
     tone: 'sky',
-    span: 'short',
+    shape: 'short',
+    image: '/img/textbooks.webp',
+    imageAlt: 'A stack of textbooks',
     title: 'Format-aware ingestion',
     body: 'PDF, Word, Excel and PowerPoint are each parsed the right way — slide titles become section headings, spreadsheet tables stay tables.',
   },
   {
     icon: 'layers',
     tone: 'lime',
-    span: 'tall',
+    shape: 'tall',
     image: '/img/books-color.webp',
     imageAlt: 'A student pulling a book from a library shelf',
     title: 'Question banks from your own material',
@@ -86,7 +104,9 @@ export const FEATURES = [
   {
     icon: 'shield',
     tone: 'lavender',
-    span: 'short',
+    shape: 'wide',
+    image: '/img/library-pick.webp',
+    imageAlt: 'Rows of shelved volumes in a reading room',
     title: 'Versioned and role-scoped',
     body: 'A new circular retires the one it replaces, so nothing stale is ever quoted — and no student can reach another student’s record.',
   },

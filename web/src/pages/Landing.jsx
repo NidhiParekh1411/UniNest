@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
-import Marquee from '../components/Marquee.jsx';
-import { Mascot } from '../components/Logo.jsx';
+import ArcSteps from '../components/ArcSteps.jsx';
+import PhotoFan from '../components/PhotoFan.jsx';
 import { Button } from '../components/ui.jsx';
 import { Reveal } from '../components/Reveal.jsx';
 import {
@@ -9,23 +9,8 @@ import {
 } from '../lib/site.js';
 
 /* --------------------------------------------------------------------- hero
-   Copy on the left, a fanned stack of photographs on the right. The fan is
-   three real pictures rotated a few degrees off each other along an arc — the
-   thing a person does with prints on a table, and the reason it reads as
-   designed rather than generated. */
-
-function PhotoFan() {
-  return (
-    <div className="fan" aria-hidden="true">
-      {HERO_PHOTOS.map((p, i) => (
-        <figure className={`fan-card fan-${i + 1}`} key={p.src}>
-          <img src={p.src} alt="" width="440" height="300" loading={i === 2 ? 'eager' : 'lazy'} decoding="async" />
-        </figure>
-      ))}
-      <Mascot pose="owl" size={104} className="fan-owl" />
-    </div>
-  );
-}
+   Copy on the left, a fanned stack of photographs on the right — see
+   components/PhotoFan.jsx, which the About hero shares. */
 
 function Hero() {
   return (
@@ -64,7 +49,7 @@ function Hero() {
         </div>
 
         <Reveal from="right" delay={140} className="hero-art">
-          <PhotoFan />
+          <PhotoFan photos={HERO_PHOTOS} mascot="owl" />
         </Reveal>
       </div>
     </section>
@@ -111,14 +96,15 @@ function Proof() {
 }
 
 /* ------------------------------------------------------------- how it works
-   The six steps ride a ribbon that scrolls itself. It pauses when you point at
-   it, and under reduced-motion it is a plain horizontal scroller. */
+   Six steps arranged along an arc. See components/ArcSteps.jsx — the curve is
+   the layout rather than something that moves, and the detail arrives on
+   hover, focus or tap. */
 
 function HowItWorks() {
   return (
     <section className="section section-surface" id="how">
       <div className="wrapper">
-        <Reveal className="section-head">
+        <Reveal className="section-head section-head-center">
           <span className="eyebrow">How it works</span>
           <h2 className="section-title">The path a question takes</h2>
           <p className="section-lede">
@@ -126,25 +112,21 @@ function HowItWorks() {
             Nothing in between is a guess.
           </p>
         </Reveal>
-      </div>
 
-      <Marquee speed={54} className="marquee-on-surface">
-        {JOURNEY.map((s) => (
-          <article className={`step tone-${['lime', 'sky', 'lavender', 'peach'][Number(s.step) % 4]}`} key={s.step}>
-            <span className="step-index">{s.step}</span>
-            <h3 className="step-title">{s.title}</h3>
-            <p className="step-body">{s.body}</p>
-          </article>
-        ))}
-      </Marquee>
+        <Reveal delay={80}>
+          <ArcSteps steps={JOURNEY} />
+        </Reveal>
+      </div>
     </section>
   );
 }
 
 /* ----------------------------------------------------------------- features
-   A pinned grid rather than an even row: three of the six blocks carry a
-   photograph and claim more height, so the eye has somewhere to land. Colour
-   still classifies — the pastel is the category, not decoration. */
+   Photo tiles rather than pastel boxes. Each tile is a photograph with a veil
+   that darkens towards its foot, the title sitting on the dark, and the
+   explanation arriving on hover. Heights vary so the grid has a rhythm; the
+   columns are `column-count`, because a masonry of variable-height blocks is
+   the one layout CSS grid still cannot do without fixed row tracks. */
 
 function Features() {
   return (
@@ -161,15 +143,13 @@ function Features() {
 
         <div className="mason">
           {FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={i * 50} className={`mason-cell mason-${f.span}`}>
-              <article className={`feature tone-${f.tone}`}>
-                {f.image && (
-                  <img className="feature-photo" src={f.image} alt={f.imageAlt} loading="lazy" decoding="async" />
-                )}
-                <div className="feature-text">
-                  <span className="feature-icon"><Icon name={f.icon} size={18} /></span>
-                  <h3 className="feature-title">{f.title}</h3>
-                  <p className="feature-body">{f.body}</p>
+            <Reveal key={f.title} delay={i * 50} className="mason-cell">
+              <article className={`tile tile-${f.shape}`} tabIndex={0}>
+                <img className="tile-photo" src={f.image} alt={f.imageAlt} loading="lazy" decoding="async" />
+                <div className="tile-text">
+                  <span className={`tile-icon tone-${f.tone}`}><Icon name={f.icon} size={16} /></span>
+                  <h3 className="tile-title">{f.title}</h3>
+                  <p className="tile-body">{f.body}</p>
                 </div>
               </article>
             </Reveal>

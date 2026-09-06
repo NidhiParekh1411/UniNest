@@ -3,38 +3,47 @@ import Icon from '../components/Icon.jsx';
 import { Button } from '../components/ui.jsx';
 import { Counter, Frame, Reveal } from '../components/Reveal.jsx';
 import JourneyPath from '../components/JourneyPath.jsx';
+import PhotoFan from '../components/PhotoFan.jsx';
+import { Mascot } from '../components/Logo.jsx';
 import {
-  COLLEGE, COLLEGE_FACULTIES, COLLEGE_MILESTONES, COLLEGE_STATS, COLLEGE_VALUES,
+  ABOUT_PHOTOS, COLLEGE, COLLEGE_FACULTIES, COLLEGE_MILESTONES, COLLEGE_STATS,
+  COLLEGE_VALUES, HISTORY_PHOTOS,
 } from '../lib/site.js';
 
 function AboutHero() {
   return (
     <section className="hero hero-plain">
-      <div className="wrapper">
-        <Reveal>
-          <span className="eyebrow">About us</span>
-        </Reveal>
-        <Reveal delay={80}>
-          <h1 className="hero-title" style={{ maxWidth: '16ch' }}>
-            A legacy that began in <span className="mark">1927</span>.
-          </h1>
-        </Reveal>
-        <Reveal delay={160}>
-          <p className="hero-lede">
-            This assistant is built for <b>{COLLEGE.name}</b>, {COLLEGE.city} — an institution
-            whose parent body, the {COLLEGE.society}, has been teaching in Gujarat for close to
-            a century. Its motto is <i>{COLLEGE.motto}</i>.
-          </p>
-        </Reveal>
-        <Reveal delay={240}>
-          <div className="hero-actions">
-            <a href={COLLEGE.website} target="_blank" rel="noreferrer noopener">
-              <Button variant="primary" size="lg">
-                Visit glsuniversity.ac.in<Icon name="arrowUpRight" size={16} />
-              </Button>
-            </a>
-            <Link to="/login"><Button size="lg">Open the assistant</Button></Link>
-          </div>
+      <div className="wrapper hero-grid">
+        <div className="hero-copy">
+          <Reveal>
+            <span className="eyebrow">About us</span>
+          </Reveal>
+          <Reveal delay={80}>
+            <h1 className="hero-title" style={{ maxWidth: '16ch' }}>
+              A legacy that began in <span className="mark">1927</span>.
+            </h1>
+          </Reveal>
+          <Reveal delay={160}>
+            <p className="hero-lede">
+              This assistant is built for <b>{COLLEGE.name}</b>, {COLLEGE.city} — an institution
+              whose parent body, the {COLLEGE.society}, has been teaching in Gujarat for close to
+              a century. Its motto is <i>{COLLEGE.motto}</i>.
+            </p>
+          </Reveal>
+          <Reveal delay={240}>
+            <div className="hero-actions">
+              <a href={COLLEGE.website} target="_blank" rel="noreferrer noopener">
+                <Button variant="primary" size="lg">
+                  Visit glsuniversity.ac.in<Icon name="arrowUpRight" size={16} />
+                </Button>
+              </a>
+              <Link to="/login"><Button size="lg">Open the assistant</Button></Link>
+            </div>
+          </Reveal>
+        </div>
+
+        <Reveal from="right" delay={140} className="hero-art">
+          <PhotoFan photos={ABOUT_PHOTOS} mascot="owl-board" mascotSize={132} />
         </Reveal>
       </div>
     </section>
@@ -108,7 +117,22 @@ function History() {
           </p>
         </Reveal>
 
-        <JourneyPath steps={COLLEGE_MILESTONES} labelKey="year" />
+        {/* The timeline is a narrow column by nature — it was leaving half the
+            section empty. The photographs fill that half and stay put while the
+            milestones scroll past them. */}
+        <div className="history-grid">
+          <JourneyPath steps={COLLEGE_MILESTONES} labelKey="year" />
+
+          <Reveal from="right" delay={120} className="history-art">
+            <div className="stack-curve">
+              {HISTORY_PHOTOS.map((p, i) => (
+                <figure className={`stack-curve-card sc-${i + 1}`} key={p.src}>
+                  <img src={p.src} alt={p.alt} loading="lazy" decoding="async" />
+                </figure>
+              ))}
+            </div>
+          </Reveal>
+        </div>
       </div>
     </section>
   );
@@ -263,22 +287,34 @@ function Contact() {
   );
 }
 
-function Newsletter() {
+/* The page used to end on a subscribe box that went nowhere: typing an address
+   into it did nothing, which is a promise the build cannot keep. It closes on
+   the two things that do work instead, with the whole cast on the left. */
+
+function Closing() {
   return (
     <section className="section" style={{ paddingTop: 0 }}>
       <div className="wrapper">
         <Reveal from="scale">
-          <div className="newsletter">
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <span className="eyebrow" style={{ justifyContent: 'center' }}>Stay in the loop</span>
-              <h2 className="cta-title" style={{ color: 'var(--text)', marginTop: 'var(--s4)' }}>
-                Get updates as new features ship
-              </h2>
+          <div className="closing">
+            <Mascot pose="owl-trio" size={280} className="closing-art" />
+            <div className="closing-body">
+              <span className="eyebrow">Ready when you are</span>
+              <h2 className="closing-title">Three roles, one campus, one place to ask</h2>
+              <p className="closing-lede">
+                Students, faculty and administration each see exactly what they should — and
+                every answer names the document it came from. Sign in with a demo account and
+                try to catch it guessing.
+              </p>
+              <div className="closing-actions">
+                <Link to="/login">
+                  <Button variant="primary" size="lg">
+                    Open the assistant<Icon name="arrowRight" size={16} />
+                  </Button>
+                </Link>
+                <Link to="/staff"><Button size="lg">Faculty &amp; administration</Button></Link>
+              </div>
             </div>
-            <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
-              <input className="input" type="email" placeholder="your.name@student.gls.edu" aria-label="Email address" />
-              <Button type="submit" variant="primary" size="lg">Subscribe</Button>
-            </form>
           </div>
         </Reveal>
       </div>
@@ -297,7 +333,7 @@ export default function About() {
       <Faculties />
       <Recognition />
       <Contact />
-      <Newsletter />
+      <Closing />
     </>
   );
 }
