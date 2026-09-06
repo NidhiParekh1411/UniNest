@@ -128,7 +128,14 @@
      strip kept its ends and had its middle erased: that is what emptied the
      centre of the step ribbon and left the whole "My subjects" rail looking
      like a blank white band. If you are writing `mask-image`, the stops go
-     transparent → opaque → transparent, never page-colour → clear. */
+     transparent → opaque → transparent, never page-colour → clear.
+
+     Nothing uses it at present. The subject rail was its last caller and now
+     carries chevrons instead, because fading the ends of a five-card row
+     washes out cards that are fully in view — reported as "the first and last
+     card are hidden". Kept because the correct form of this gradient is worth
+     having written down somewhere; reach for it only on a strip long enough
+     that its ends are genuinely off-screen. */
   --fade-x-mask: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 1) 7%, rgb(0 0 0 / 1) 93%, rgb(0 0 0 / 0) 100%);
 
   /* --- semantic --------------------------------------------------------- */
@@ -138,6 +145,11 @@
   --warn-soft: #fbf0dc;
   --bad: #b0362c;
   --bad-soft: #fbeae8;
+  /* The fill weight, in the role --lime-2 and --peach-2 play for their
+     families: a bar, a meter or a chart series. --bad above is text strength
+     and is far too dark to fill a shape with. This existed as a bare #e79b91
+     in three separate files before it was a token. */
+  --bad-2: #e79b91;
 
   /* --- type -------------------------------------------------------------
      One family. Weight and size carry the hierarchy; there is no display

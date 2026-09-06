@@ -538,6 +538,59 @@ geometry first:
 - The **subject rail and cards** — the point of the change is that five
   subjects no longer read as one block. That is a judgement only you can make.
 
+### 6 September 2026 (later) — a second on-screen review
+
+Six things the owner asked for after looking at it again. Two were bugs with a
+shared shape: a decorative effect was hiding information.
+
+- **The edge fade was hiding the rail, not softening it.** `--fade-x-mask` took
+  alpha to zero at both ends of "My subjects", so the first and last cards came
+  out half-erased even when fully in view — reported as "the first and last
+  card is hidden and there is no way to scroll". The mask is off the rail and
+  `SubjectRail` renders an ink chevron on whichever side still has cards behind
+  it, measured off `scrollLeft` so touch and trackpad scrolling keep it honest.
+  Fixing that exposed a second one: `scroll-snap-align: start` snaps to the
+  **scroll-padding** edge, so without `scroll-padding-inline` the first card
+  snapped past the rail's own padding and an untouched rail sat at
+  `scrollLeft: 24` showing a "previous" arrow with nothing behind it.
+  `--fade-x-mask` now has no callers; it is kept, annotated, because the
+  correct way to write one is worth not losing.
+- **`BarChart`'s threshold label was underneath the last bar.** It was drawn
+  inside the plot at the right-hand end, anchored `end` — which is precisely
+  where the tallest bar stands. On the faculty dashboard the bar covered "75%"
+  and left "required" floating alone. There is a 34px reserved gutter now and
+  the label sits outside the plot, vertically centred on the dashed line. The
+  word "required" moved to the three card subtitles.
+- **The attendance and results cards get a threshold meter.** `Progress` said
+  nothing about the number those screens are actually about, and 82% vs 95%
+  read as the same "nearly full" bar. `ThresholdMeter` combs the track into
+  twenty ticks and draws the requirement — 75% attendance, 40% marks — as an
+  ink gate across the scale. The comb is hairlines in the card's colour laid
+  over track and fill, **not** discrete segments: segments round to the nearest
+  notch, which would put 74% and 76% on the same one, on opposite sides of the
+  line that decides examination eligibility. `Progress` stays for the cohort
+  table and the two dashboards.
+- **About us is the last nav item.** The two in-page anchors must stay in
+  document order or the scroll spy lights the wrong link; there is a comment on
+  `NAV` saying so.
+- **The About page's closing panel is `lime-soft`, and so is the contact
+  section above it** — with `paddingTop: 0` the two fused into one continuous
+  wash and the panel lost its edge. `.section-closing` puts `--s7` of page
+  ground in the seam.
+- **The sign-in aside's two point cards were 62% white on a near-white wash**,
+  so they had no edge and read as smudges under the mascot. They are one opaque
+  block with a hairline between the rows, centred on the owl's axis with a
+  lede, and the heading dropped a step so the *form's* title is the page's
+  primary heading.
+
+Also `#e79b91` — the pastel red that fills a bar — was hardcoded in three
+files and is `--bad-2` now, in the role `--lime-2` and `--peach-2` play.
+
+Verified in a browser at 1440: nav order and scroll spy, the About seam
+(54px), the rail resting at `scrollLeft: 0` with one chevron and no page
+overflow, the meters with their gate markers, and the chart label clear of the
+bars. Production build clean.
+
 ### Next task
 
 1. **Look at all of this in a browser** at 375 / 768 / 1440.

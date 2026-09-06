@@ -293,7 +293,7 @@ function Contact() {
 
 function Closing() {
   return (
-    <section className="section" style={{ paddingTop: 0 }}>
+    <section className="section section-closing">
       <div className="wrapper">
         <Reveal from="scale">
           <div className="closing">

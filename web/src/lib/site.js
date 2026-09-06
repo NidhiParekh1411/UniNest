@@ -17,11 +17,15 @@ export const PRODUCT = {
     'Ask a question in plain English and get an answer drawn from your college’s own circulars, timetables and notes — with the document it came from attached.',
 };
 
+// The two in-page anchors must stay in the order their sections appear on the
+// landing page: the scroll spy in SiteHeader lights the *last* section whose
+// top has crossed the header, so a list out of document order highlights the
+// wrong link.
 export const NAV = [
   { to: '/', label: 'Home', end: true },
-  { to: '/about', label: 'About us' },
   { to: '/#how', label: 'How it works' },
   { to: '/#features', label: 'Features' },
+  { to: '/about', label: 'About us' },
 ];
 
 /* --------------------------------------------------------- landing content */

@@ -199,7 +199,7 @@ function FacultyHome({ data, user }) {
         <StatRow stats={data.stats} />
 
         <div className="grid-2 grid-2-aside">
-          <Card title="Attendance by subject" subtitle="Average across each class you teach">
+          <Card title="Attendance by subject" subtitle="Average across each class you teach · the dashed line is the 75% requirement">
             {chart.length
               ? <BarChart data={chart} threshold={75} />
               : <EmptyState icon="chart" title="No attendance recorded" body="Once sessions are marked, the picture appears here." />}
@@ -257,7 +257,7 @@ function AdminHome({ data }) {
         <StatRow stats={data.stats} />
 
         <div className="grid-2 grid-2-aside">
-          <Card title="Attendance by branch" subtitle="Average across all recorded sessions">
+          <Card title="Attendance by branch" subtitle="Average across all recorded sessions · the dashed line is the 75% requirement">
             <BarChart
               data={data.byBranch.map((b) => ({ label: b.branch, fullLabel: b.branch, value: b.attendance }))}
               threshold={75}

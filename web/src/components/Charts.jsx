@@ -26,7 +26,7 @@ function useMeasure() {
 const SERIES = {
   ok: 'var(--lime-2)',
   warn: 'var(--peach-2)',
-  bad: '#e79b91',
+  bad: 'var(--bad-2)',
   line: 'var(--ink)',
   track: 'var(--surface-3)',
 };
@@ -38,11 +38,20 @@ const AXIS = { fontSize: 11, fill: 'var(--text-3)', fontFamily: 'var(--font)', f
 export function BarChart({ data, height = 200, valueSuffix = '%', threshold, maxValue }) {
   const [ref, width] = useMeasure();
 
-  const pad = { top: 14, right: 4, bottom: 34, left: 30 };
+  /* A threshold line needs somewhere to put its own label, and it used to be
+   * drawn inside the plot at the right-hand end — which is exactly where the
+   * last bar stands. On the faculty dashboard that bar covered the number and
+   * left the word "required" apparently floating on its own. The label sits in
+   * a reserved gutter outside the plot now, so no bar can reach it whatever
+   * its height. The word itself moves to the card's subtitle; a figure beside
+   * a dashed line does not need it repeated on every chart. */
+  const gutter = 34;
+  const pad = { top: 14, right: threshold != null ? gutter : 4, bottom: 34, left: 30 };
   const innerW = Math.max(0, width - pad.left - pad.right);
   const innerH = height - pad.top - pad.bottom;
   const max = maxValue ?? Math.max(100, ...data.map((d) => d.value));
   const ticks = [0, max / 2, max];
+  const thresholdY = threshold == null ? null : pad.top + innerH - (threshold / max) * innerH;
 
   const count = data.length || 1;
   const step = innerW / count;
@@ -64,16 +73,16 @@ export function BarChart({ data, height = 200, valueSuffix = '%', threshold, max
           {threshold != null && threshold <= max && (
             <g>
               <line
-                x1={pad.left} x2={width - pad.right}
-                y1={pad.top + innerH - (threshold / max) * innerH}
-                y2={pad.top + innerH - (threshold / max) * innerH}
+                x1={pad.left} x2={width - pad.right - 4}
+                y1={thresholdY} y2={thresholdY}
                 stroke="var(--border-strong)" strokeWidth="1.5" strokeDasharray="4 4"
               />
               <text
-                x={width - pad.right} y={pad.top + innerH - (threshold / max) * innerH - 5}
-                textAnchor="end" {...AXIS} fill="var(--text-3)"
+                x={width - pad.right + 2} y={thresholdY + 3.5}
+                textAnchor="start" {...AXIS} fill="var(--text-2)"
               >
-                {threshold}{valueSuffix} required
+                {threshold}{valueSuffix}
+                <title>{`${threshold}${valueSuffix} required`}</title>
               </text>
             </g>
           )}
@@ -232,6 +241,43 @@ export function Progress({ value, max = 100, tone }) {
   return (
     <div className="progress" role="progressbar" aria-valuenow={Math.round(pctValue)} aria-valuemin={0} aria-valuemax={100}>
       <div className={`progress-fill${tone && tone !== 'ok' ? ` ${tone}` : ''}`} style={{ width: `${pctValue}%` }} />
+    </div>
+  );
+}
+
+/* The bar on an attendance or a results card.
+ *
+ * Not `Progress`, for two reasons. A plain rounded fill made 82% and 95% read
+ * as the same length — a reader compares two bars by eye and both are simply
+ * "nearly full" — and it said nothing at all about the one number each of
+ * those screens is actually about: 75% to sit the examination, 40% to pass.
+ * That line is drawn *on* the scale here, so a card answers "am I short?"
+ * without the reader doing arithmetic.
+ *
+ * The ticks are hairlines in the card's own colour laid over the track and the
+ * fill alike, not a row of discrete segments. Segments were the other option
+ * and they round to the nearest notch, which would put 76% and 74% on the same
+ * one — on opposite sides of the line that matters. This way the fill stays
+ * exactly where the number is and only the comb is quantised.
+ */
+export function ThresholdMeter({ value, max = 100, tone, threshold, thresholdLabel }) {
+  const pct = Math.max(0, Math.min(100, (value / max) * 100));
+  const markAt = threshold == null ? null : Math.max(0, Math.min(100, (threshold / max) * 100));
+
+  return (
+    <div
+      className={`meter${tone && tone !== 'ok' ? ` ${tone}` : ''}`}
+      role="progressbar"
+      aria-valuenow={Math.round(pct)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <span className="meter-track">
+        <span className="meter-fill" style={{ width: `${pct}%` }} />
+      </span>
+      {markAt != null && (
+        <span className="meter-mark" style={{ left: `${markAt}%` }} title={thresholdLabel} />
+      )}
     </div>
   );
 }

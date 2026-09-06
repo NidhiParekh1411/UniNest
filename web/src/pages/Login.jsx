@@ -26,6 +26,7 @@ const COPY = {
     switchTo: '/staff',
     switchLabel: 'Use the staff sign-in',
     asideTitle: 'Your whole semester, in one place.',
+    asideLede: 'Timetable, attendance, results and every notice for your class — and an assistant that reads the college’s own documents.',
     points: [
       ['sparkle', 'Answers with a source', 'Every reply names the document it came from.'],
       ['calendar', 'Your timetable, not a generic one', 'Scoped to your branch, semester and lab batch.'],
@@ -39,6 +40,7 @@ const COPY = {
     switchTo: '/login',
     switchLabel: 'Use the student sign-in',
     asideTitle: 'Publish once. Answer a hundred times.',
+    asideLede: 'Upload a circular, a timetable or a slide deck once, and the assistant answers from it for every student entitled to see it.',
     points: [
       ['upload', 'Format-aware ingestion', 'PDF, Word, Excel and slides, each parsed the right way.'],
       ['clock', 'Schedule an announcement', 'Write it now, let it appear at the time you choose.'],
@@ -108,13 +110,16 @@ export default function Login({ portal }) {
           <div className="auth-aside-mid">
             <Mascot pose="owl-board" size={420} className="auth-aside-art" alt="" />
 
+            {/* Centred under the owl, and the two points are one opaque block
+                rather than two translucent ones — see `.auth-points`. */}
             <div className="auth-aside-foot">
               <h2 className="auth-aside-title">{copy.asideTitle}</h2>
+              <p className="auth-aside-lede">{copy.asideLede}</p>
               <ul className="auth-points">
                 {copy.points.map(([icon, title, body]) => (
                   <li className="auth-point" key={title}>
                     <span className="auth-point-icon"><Icon name={icon} size={16} /></span>
-                    <span>
+                    <span className="auth-point-text">
                       <span className="auth-point-title">{title}</span>
                       <span className="auth-point-body">{body}</span>
                     </span>

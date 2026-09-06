@@ -4,7 +4,7 @@ import { useApi } from '../lib/useApi.js';
 import { useAuth } from '../lib/auth.jsx';
 import { SubjectCard } from '../components/SubjectRail.jsx';
 import { Badge, Card, EmptyState, ErrorNote, PageHead, SkeletonList, Table } from '../components/ui.jsx';
-import { BarChart, DonutChart, Progress } from '../components/Charts.jsx';
+import { BarChart, DonutChart, Progress, ThresholdMeter } from '../components/Charts.jsx';
 import { attendanceTone, BRANCHES, BRANCH_NAMES, SEMESTERS, formatDate } from '../lib/format.js';
 
 /* The last ten marked sessions, as a row of squares.
@@ -45,7 +45,7 @@ function AttendanceCard({ subject, index }) {
       badge={<Badge tone={tone}>{subject.percent}%</Badge>}
     >
       <div className="subject-card-meter">
-        <Progress value={subject.percent} tone={tone} />
+        <ThresholdMeter value={subject.percent} tone={tone} threshold={75} thresholdLabel="75% required" />
         <span className="subject-card-count num">{subject.attended} of {subject.total}</span>
       </div>
       <RecentSessions sessions={subject.sessions} />
@@ -84,7 +84,7 @@ function StudentView({ data }) {
       <div>
         <div className="section-bar">
           <h2 className="section-bar-title">Subject detail</h2>
-          <p className="section-bar-sub">Sessions attended, and the last ten marked</p>
+          <p className="section-bar-sub">Sessions attended against the 75% mark on each meter, and the last ten marked</p>
         </div>
         <div className="subject-grid">
           {data.subjects.map((s, i) => <AttendanceCard key={s.id} subject={s} index={i} />)}

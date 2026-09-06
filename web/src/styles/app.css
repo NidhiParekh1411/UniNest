@@ -495,11 +495,25 @@
   margin: var(--s5) auto 0;
   filter: drop-shadow(0 18px 34px rgb(32 33 36 / 0.16));
 }
-.auth-aside-foot { padding-top: var(--s6); }
+/* The copy under the owl, as a centred column on the mascot's own axis. It
+   used to be left-aligned full-bleed text under a centred illustration, which
+   left the half reading as two unrelated compositions stacked on each other. */
+.auth-aside-foot {
+  padding-top: var(--s6);
+  width: min(100%, 400px);
+  margin-inline: auto;
+  text-align: center;
+}
 .auth-aside-title {
-  font-size: var(--fs-2xl);
-  font-weight: 800; letter-spacing: -0.035em; line-height: 1.15;
-  max-width: 16ch;
+  /* One step down from --fs-2xl, which the form's own heading uses. Two
+     headings of equal weight either side of the fold left neither of them
+     looking like the page's actual title. */
+  font-size: var(--fs-xl);
+  font-weight: 800; letter-spacing: -0.03em; line-height: 1.25;
+}
+.auth-aside-lede {
+  margin: var(--s3) 0 0;
+  font-size: var(--fs-sm); color: var(--text-2); line-height: 1.65;
 }
 /* On a phone the aside is a banner: brand and mascot only, so the form is
    still the first thing in reach. */
@@ -570,23 +584,36 @@
 .demo-account-note { font-size: var(--fs-xs); color: var(--text-3); }
 .demo-account-go { color: var(--text-3); flex-shrink: 0; }
 
-.auth-points { display: grid; gap: var(--s2); list-style: none; padding: 0; margin: var(--s5) 0 0; }
+/* One opaque block, not two translucent ones.
+   These were 62% white with an 80% white border, laid over a wash that is
+   itself almost white — so they had no edge to speak of and read as two grey
+   smudges under the mascot rather than as cards. The composer under the
+   assistant answers the same question the same way: a gradient is a backdrop,
+   and anything that carries text on top of one is a solid surface. Two rows
+   divided by a hairline also read as one deliberate object, which two
+   free-floating boxes never did. */
+.auth-points {
+  list-style: none; padding: 0;
+  margin: var(--s5) 0 0;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
 .auth-point {
   display: flex; align-items: flex-start; gap: var(--s3);
   padding: var(--s4);
-  border-radius: var(--r);
-  /* Translucent, so the wash behind it stays visible and the card reads as
-     sitting on the gradient rather than punched out of it. */
-  background: rgb(255 255 255 / 0.62);
-  border: 1px solid rgb(255 255 255 / 0.8);
 }
+.auth-point + .auth-point { border-top: 1px solid var(--border); }
 .auth-point-icon {
-  width: 34px; height: 34px; border-radius: var(--r-sm); flex-shrink: 0;
+  width: 32px; height: 32px; border-radius: var(--r-sm); flex-shrink: 0;
   background: var(--lime); color: var(--lime-ink);
   display: grid; place-items: center;
 }
+.auth-point-text { min-width: 0; }
 .auth-point-title { font-weight: 700; font-size: var(--fs-sm); display: block; }
-.auth-point-body { font-size: var(--fs-xs); color: var(--text-2); }
+.auth-point-body { font-size: var(--fs-xs); color: var(--text-2); line-height: 1.55; }
 
 /* =======================================================  7 · app screens */
 
@@ -1011,7 +1038,7 @@
   transition: width 700ms var(--ease-out);
 }
 .progress-fill.warn { background: var(--peach-2); }
-.progress-fill.bad { background: #e79b91; }
+.progress-fill.bad { background: var(--bad-2); }
 
 .donut-center { text-align: center; }
 
@@ -1365,9 +1392,54 @@
   background: var(--tone-soft, var(--surface-2));
   color: var(--tone-ink, var(--text-2));
 }
-.subject-card-meter { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s4); }
+.subject-card-meter { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s5); }
 .subject-card-meter > :first-child { flex: 1; }
 .subject-card-count { font-size: var(--fs-xs); color: var(--text-2); white-space: nowrap; }
+
+/* --- the threshold meter ------------------------------------------------
+   The bar on an attendance or a results card, in place of the plain rounded
+   fill that was there. See ThresholdMeter in components/Charts.jsx for why it
+   is combed rather than continuous and why the requirement is drawn on it. */
+
+.meter { position: relative; min-width: 0; }
+.meter-track {
+  position: relative;
+  display: block;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.meter-fill {
+  position: absolute; inset: 0 auto 0 0;
+  background: var(--lime-2);
+  transition: width 520ms var(--ease-out);
+}
+.meter.warn .meter-fill { background: var(--peach-2); }
+.meter.bad .meter-fill { background: var(--bad-2); }
+/* The comb: twenty hairlines in the card's own colour, over the track and the
+   fill alike. It is a paint gradient used as a background, which is the right
+   way round — the inverted-mask bug that emptied this rail and the step ribbon
+   came from writing one of these and then reading it as alpha. */
+.meter-track::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgb(0 0 0 / 0) 0 calc(100% / 20 - 2px),
+    var(--surface) calc(100% / 20 - 2px) calc(100% / 20)
+  );
+}
+/* The requirement, standing slightly clear of the track at both ends so it
+   reads as a gate across the scale rather than as one more tick in the comb. */
+.meter-mark {
+  position: absolute;
+  top: -4px; bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--ink);
+}
 
 .recent { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s4); flex-wrap: wrap; }
 .recent-dots { display: flex; gap: 4px; }
@@ -1376,20 +1448,61 @@
 .recent-absent { background: var(--bad-soft); box-shadow: inset 0 0 0 1.5px var(--bad); }
 
 /* --- the subject rail --------------------------------------------------
-   college_ref(2)'s course row. Horizontal scroll with snap, and the same edge
-   fade as the step arc's ends so the row dissolves rather than being clipped. */
+   college_ref(2)'s course row: a horizontal scroller with snap.
 
+   It used to carry --fade-x-mask on both ends, and that is what made the first
+   and last cards look broken rather than scrollable. The mask takes alpha to
+   zero at each edge, so a card sitting fully in view came out half-erased —
+   the row read as two damaged cards with no way to move them, which is exactly
+   how it was reported. The affordance is explicit now: a chevron appears on
+   whichever side still has cards behind it, and nothing in view is dimmed.
+   The bleed to the card's border is kept, because a card clipped by the edge
+   of its container is the honest signal that the row continues. */
+
+.rail-wrap { position: relative; }
 .rail {
   margin-inline: calc(var(--s5) * -1);
   padding-inline: var(--s5);
   overflow-x: auto;
   scroll-snap-type: x proximity;
+  /* Snapping aligns a card's start edge to the *scroll-padding* edge, not to
+     the raw edge of the scrollport. Without this the first card snapped past
+     the rail's own left padding, so a rail nobody had touched sat at
+     scrollLeft 24 and showed a "previous" chevron with nothing behind it. */
+  scroll-padding-inline: var(--s5);
   scrollbar-width: none;
-  -webkit-mask-image: var(--fade-x-mask);
-  mask-image: var(--fade-x-mask);
 }
 .rail::-webkit-scrollbar { display: none; }
 .rail-track { display: flex; gap: var(--s3); padding-block: 2px; width: max-content; }
+
+/* Ink, not white. The arrow floats over white cards, and a white circle with a
+   hairline border on a white card is invisible; ink is this system's action
+   colour anyway. A shadow is allowed here for the same reason it is allowed on
+   back-to-top — it is an overlay control, not a card. */
+.rail-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  padding: 0; border: 0;
+  border-radius: var(--r-full);
+  background: var(--ink);
+  color: var(--on-ink);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background var(--t-fast);
+  /* Opacity only — the transform is carrying the vertical centring, and a
+     keyframe that touches it would drop the button half a height. */
+  animation: railNavIn var(--t) both;
+}
+@keyframes railNavIn { from { opacity: 0; } to { opacity: 1; } }
+/* Half of --s5 outside the card's content box, which puts the circle 8px
+   inside the card's own border — the rail bleeds the full --s5 to it. */
+.rail-nav-prev { left: calc(var(--s5) * -1 + var(--s2)); }
+.rail-nav-next { right: calc(var(--s5) * -1 + var(--s2)); }
+@media (hover: hover) { .rail-nav:hover { background: var(--ink-3); } }
 
 .course {
   position: relative;
@@ -1908,6 +2021,13 @@ button.course { cursor: pointer; }
 /* --- the closing panel --------------------------------------------------
    Replaces a subscribe box that went nowhere. The whole cast on the left, the
    two things that actually work on the right. */
+
+/* The section above this one is tinted the same lime-soft as the panel itself,
+   so with no top padding at all the two blocks fused into one continuous wash
+   and the panel lost its edge entirely. The gap is the page ground showing
+   through. It is shorter than a full --section-y because the tinted section
+   already pays its own bottom padding on the other side of the seam. */
+.section-closing { padding-block: var(--s7) var(--section-y); }
 
 .closing {
   display: grid;

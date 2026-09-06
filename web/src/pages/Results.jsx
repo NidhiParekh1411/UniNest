@@ -4,7 +4,7 @@ import { useApi } from '../lib/useApi.js';
 import { useAuth } from '../lib/auth.jsx';
 import { SubjectCard } from '../components/SubjectRail.jsx';
 import { Badge, Card, EmptyState, ErrorNote, PageHead, SkeletonList, Table, Tabs } from '../components/ui.jsx';
-import { BarChart, DonutChart, LineChart, Progress } from '../components/Charts.jsx';
+import { BarChart, DonutChart, LineChart, ThresholdMeter } from '../components/Charts.jsx';
 import { BRANCHES, BRANCH_NAMES, SEMESTERS, marksTone } from '../lib/format.js';
 
 function StudentView({ data }) {
@@ -37,7 +37,9 @@ function StudentView({ data }) {
 
       <Card
         title="Semester detail"
-        subtitle={current ? `${current.examType === 'midsem' ? 'Mid-semester' : 'End-semester'} results · SPI ${current.spi.toFixed(2)}` : undefined}
+        subtitle={current
+          ? `${current.examType === 'midsem' ? 'Mid-semester' : 'End-semester'} results · SPI ${current.spi.toFixed(2)} · the dashed line is the 40% pass mark`
+          : undefined}
       >
         <Tabs
           tabs={data.bySemester.map((s) => ({ value: s.semester, label: `Sem ${s.semester}` }))}
@@ -66,7 +68,7 @@ function StudentView({ data }) {
                 badge={<Badge tone={marksTone(r.percent)}>{r.percent}%</Badge>}
               >
                 <div className="subject-card-meter">
-                  <Progress value={r.percent} tone={marksTone(r.percent)} />
+                  <ThresholdMeter value={r.percent} tone={marksTone(r.percent)} threshold={40} thresholdLabel="40% to pass" />
                   <span className="subject-card-count num">{r.marks} / {r.maxMarks}</span>
                 </div>
               </SubjectCard>
