@@ -746,7 +746,17 @@
 
 /* ==============================================================  9 · chat  */
 
-.chat { display: flex; flex-direction: column; height: calc(100dvh - var(--topbar-h)); }
+/* The assistant is the one screen that gets an atmospheric background: a soft
+   bloom rising from the bottom, behind the composer, in the manner of
+   college_ref(9) and (10) but in this palette rather than theirs. Everything
+   inside it stays on the flat system — the wash is light in the room, not
+   paint on the furniture. */
+.chat {
+  display: flex; flex-direction: column;
+  height: calc(100dvh - var(--topbar-h));
+  background: var(--grad-aurora), var(--bg);
+  background-attachment: local;
+}
 .chat-scroll { flex: 1; overflow-y: auto; padding: var(--s5) 0; scroll-behavior: smooth; }
 .chat-inner { max-width: 760px; margin: 0 auto; padding: 0 var(--s4); }
 
@@ -808,7 +818,10 @@
 .chat-data { margin-top: var(--s4); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; background: var(--surface); }
 .chat-data-head { padding: var(--s3) var(--s4); background: var(--surface-2); border-bottom: 1px solid var(--border); }
 
-.composer-wrap { padding: var(--s3) var(--s4) var(--s4); background: var(--bg); border-top: 1px solid var(--border); }
+/* Transparent, so the bloom passes behind the composer instead of stopping at
+   a hard rule above it. The composer itself stays a solid white block: it is
+   an input, and an input on a gradient is unreadable. */
+.composer-wrap { padding: var(--s3) var(--s4) var(--s4); background: transparent; }
 .composer-inner { max-width: 760px; margin: 0 auto; position: relative; }
 .composer {
   display: flex; align-items: flex-end; gap: var(--s2);
@@ -827,6 +840,12 @@
   padding: 10px 0;
   max-height: 150px;
 }
+/* The global :focus-visible rule paints a 4px ink ring via box-shadow. On a
+   bare textarea inside a bordered container that ring reads as a black
+   rectangle drawn over the composer — which is exactly what it looked like.
+   The container already shows focus with :focus-within above, so the inner
+   ring is redundant as well as ugly. */
+.composer textarea:focus-visible { box-shadow: none; }
 .composer-send {
   width: 38px; height: 38px; border-radius: var(--r-sm);
   border: none; background: var(--ink); color: var(--on-ink);
@@ -858,6 +877,13 @@
   transition: background var(--t-fast);
 }
 .suggest-item:last-child { padding-bottom: var(--s3); }
+/* The list arrives one row at a time. --i is the row's index across the whole
+   flattened list, set in Assistant.jsx, and the delay is capped so a long list
+   never keeps the reader waiting. */
+.suggest-item, .starter {
+  animation: riseInSoft 240ms var(--ease-out) both;
+  animation-delay: min(calc(var(--i, 0) * 45ms), 400ms);
+}
 .suggest-item.highlighted, .suggest-item:hover { background: var(--lime-soft); }
 .suggest-icon { color: var(--text-3); display: grid; place-items: center; flex-shrink: 0; }
 
@@ -867,10 +893,12 @@
 .typing span:nth-child(3) { animation-delay: 0.3s; }
 
 .chat-hero { text-align: center; padding: var(--s7) var(--s4) var(--s5); }
-.chat-hero-mark {
-  width: 68px; height: 68px; border-radius: var(--r-lg);
-  background: var(--lime); display: grid; place-items: center;
-  margin: 0 auto var(--s5); color: var(--ink);
+/* The illustrated mascot, not the glyph: this is the one screen with room for
+   it, and an empty chat is exactly where a bit of warmth belongs. */
+.chat-hero-owl {
+  width: clamp(96px, 26vw, 132px); height: auto;
+  margin: 0 auto var(--s4);
+  filter: drop-shadow(0 14px 26px rgb(32 33 36 / 0.14));
 }
 .chat-hero-title { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.035em; }
 .chat-hero-sub { color: var(--text-2); font-size: var(--fs-sm); margin: var(--s3) auto 0; max-width: 46ch; line-height: 1.7; }
@@ -880,7 +908,7 @@
   padding: var(--s3) var(--s4);
   border: 1px solid var(--border); border-radius: var(--r);
   background: var(--surface); cursor: pointer;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-sm); text-align: left;
   transition: background var(--t-fast), border-color var(--t-fast);
 }
 @media (hover: hover) { .starter:hover { background: var(--lime-soft); border-color: var(--lime-2); } }

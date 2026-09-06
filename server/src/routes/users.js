@@ -63,15 +63,46 @@ router.post('/', requireRole(ROLES.ADMIN), async (req, res) => {
   return res.status(201).json({ user: publicUser(user) });
 });
 
+// Editing an account. Role is deliberately not editable: it decides the shape
+// of the record (a student carries an enrollment number, a branch and a
+// semester; staff carry a department), so flipping it would leave a half-built
+// account behind. Removing and re-adding is the honest way to change a role.
 router.patch('/:id', requireRole(ROLES.ADMIN), async (req, res) => {
   const user = await db.users.byId(req.params.id);
   if (!user) return res.status(404).json({ error: 'Account not found' });
   const patch = {};
-  for (const key of ['name', 'department', 'branch', 'division', 'designation']) {
+
+  for (const key of ['name', 'department', 'branch', 'division', 'designation', 'enrollment']) {
     if (typeof req.body?.[key] === 'string') patch[key] = req.body[key].trim();
   }
-  if (req.body?.semester != null) patch.semester = Number(req.body.semester);
-  if (req.body?.password) patch.password = hash(String(req.body.password));
+  if (patch.name === '') return res.status(400).json({ error: 'Name cannot be empty' });
+
+  // Email is the sign-in identity, so it may change but must stay unique.
+  if (typeof req.body?.email === 'string') {
+    const email = req.body.email.trim().toLowerCase();
+    if (!email) return res.status(400).json({ error: 'Email cannot be empty' });
+    if (email !== user.email) {
+      const clash = await db.users.findOne({ email });
+      if (clash) return res.status(409).json({ error: 'Another account already uses that email' });
+      patch.email = email;
+    }
+  }
+
+  if (req.body?.semester != null && req.body.semester !== '') {
+    const semester = Number(req.body.semester);
+    if (!Number.isInteger(semester) || semester < 1 || semester > 8) {
+      return res.status(400).json({ error: 'Semester must be between 1 and 8' });
+    }
+    patch.semester = semester;
+  }
+
+  if (req.body?.password) {
+    const password = String(req.body.password);
+    if (password.length < 6) return res.status(400).json({ error: 'A password needs at least 6 characters' });
+    patch.password = hash(password);
+  }
+
+  if (!Object.keys(patch).length) return res.json({ user: publicUser(user) });
   return res.json({ user: publicUser(await db.users.update(user.id, patch)) });
 });
 

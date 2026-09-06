@@ -14,7 +14,7 @@ import { PRODUCT } from '../lib/site.js';
 const NAV = {
   student: [
     { to: '/app', label: 'Home', icon: 'grid', end: true },
-    { to: '/app/assistant', label: 'Assistant', icon: 'ghost' },
+    { to: '/app/assistant', label: 'Assistant', icon: 'owl' },
     { to: '/app/timetable', label: 'Timetable', icon: 'calendar' },
     { to: '/app/attendance', label: 'Attendance', icon: 'chart' },
     { to: '/app/results', label: 'Results', icon: 'graduation' },
@@ -24,7 +24,7 @@ const NAV = {
   ],
   faculty: [
     { to: '/app', label: 'Home', icon: 'grid', end: true },
-    { to: '/app/assistant', label: 'Assistant', icon: 'ghost' },
+    { to: '/app/assistant', label: 'Assistant', icon: 'owl' },
     { to: '/app/timetable', label: 'My schedule', icon: 'calendar' },
     { to: '/app/assignments', label: 'Assignments', icon: 'clipboard' },
     { to: '/app/attendance', label: 'Attendance', icon: 'chart' },
@@ -35,7 +35,7 @@ const NAV = {
   ],
   admin: [
     { to: '/app', label: 'Home', icon: 'grid', end: true },
-    { to: '/app/assistant', label: 'Assistant', icon: 'ghost' },
+    { to: '/app/assistant', label: 'Assistant', icon: 'owl' },
     { to: '/app/people', label: 'People', icon: 'users' },
     { to: '/app/subjects', label: 'Subjects & faculty', icon: 'layers' },
     { to: '/app/timetable', label: 'Timetables', icon: 'calendar' },

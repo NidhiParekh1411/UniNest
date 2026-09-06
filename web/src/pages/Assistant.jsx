@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../lib/api.js';
 import { useAuth } from '../lib/auth.jsx';
 import Icon from '../components/Icon.jsx';
-import Logo from '../components/Logo.jsx';
+import Logo, { Mascot } from '../components/Logo.jsx';
 import { Badge, Button } from '../components/ui.jsx';
 import { Progress } from '../components/Charts.jsx';
 import { attendanceTone, formatDate, relative } from '../lib/format.js';
@@ -325,6 +325,11 @@ function Composer({ onSend, busy }) {
                       role="option"
                       aria-selected={highlight === index}
                       className={`suggest-item${highlight === index ? ' highlighted' : ''}`}
+                      // Each row carries its position so the list arrives one
+                      // after another rather than all at once. Index is taken
+                      // across the flattened list, so the stagger continues
+                      // through the group headings instead of restarting.
+                      style={{ '--i': index }}
                       onMouseEnter={() => setHighlight(index)}
                       onClick={() => send(item.text)}
                     >
@@ -434,7 +439,7 @@ export default function Assistant() {
         <div className="chat-inner">
           {messages.length === 0 ? (
             <div className="chat-hero">
-              <div className="chat-hero-mark"><Logo size={38} /></div>
+              <Mascot pose="owl" size={132} className="chat-hero-owl" alt="" />
               <h1 className="chat-hero-title">
                 {user.role === 'student' ? `Hello, ${user.name.split(' ')[0]}.` : 'How can I help?'}
               </h1>
@@ -442,8 +447,8 @@ export default function Assistant() {
                 Ask about a policy, a deadline, your timetable or your records. Answers from documents always show the circular they came from — and if the documents don’t cover it, I’ll say so.
               </p>
               <div className="starter-grid">
-                {starters.map((s) => (
-                  <button key={s.text} className="starter" onClick={() => send(s.text)}>
+                {starters.map((s, i) => (
+                  <button key={s.text} className="starter" style={{ '--i': i }} onClick={() => send(s.text)}>
                     <Icon name={suggestIcon(s.icon)} size={15} className="dim" />
                     <span className="grow">{s.text}</span>
                     <Icon name="chevron" size={13} className="dim" />
