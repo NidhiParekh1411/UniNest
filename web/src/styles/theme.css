@@ -120,23 +120,16 @@
   /* Edge fades for horizontally scrolling strips — the track dissolves into
      the ground instead of being cut off by a hard border.
      
-     There are two of these because there are two ways to draw the effect and
-     they are exact opposites of each other:
-     
-       --fade-x-paint  is laid OVER the strip as a background. It is the page
-                       colour at the edges and transparent in the middle, so it
-                       hides the ends and lets the middle through.
-       --fade-x-mask   is a `mask-image`, where only the ALPHA channel counts
-                       and colour is ignored entirely. It must therefore be
-                       transparent at the edges and opaque in the middle.
-     
-     Using the paint version as a mask inverts the effect: the ends stay and
-     the middle is erased. That is what emptied the centre of the step ribbon
-     and made the whole "My subjects" rail look like a blank white band. If you
-     are writing `mask-image`, you want `--fade-x-mask`. */
+     This is a `mask-image`, where only the ALPHA channel counts and colour is
+     ignored entirely — so it is transparent at the ends and opaque in the
+     middle, which is the exact opposite of how the same effect would be
+     written as a background laid OVER the strip. The version that lived here
+     before was written the second way and used the first way, so every masked
+     strip kept its ends and had its middle erased: that is what emptied the
+     centre of the step ribbon and left the whole "My subjects" rail looking
+     like a blank white band. If you are writing `mask-image`, the stops go
+     transparent → opaque → transparent, never page-colour → clear. */
   --fade-x-mask: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 1) 7%, rgb(0 0 0 / 1) 93%, rgb(0 0 0 / 0) 100%);
-  --fade-x-paint-bg: linear-gradient(90deg, var(--bg) 0%, rgb(245 245 244 / 0) 8%, rgb(245 245 244 / 0) 92%, var(--bg) 100%);
-  --fade-x-paint-surface: linear-gradient(90deg, var(--surface) 0%, rgb(255 255 255 / 0) 8%, rgb(255 255 255 / 0) 92%, var(--surface) 100%);
 
   /* --- semantic --------------------------------------------------------- */
   --ok: #2f7a4d;

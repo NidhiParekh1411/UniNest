@@ -1920,6 +1920,7 @@ button.course { cursor: pointer; }
   padding: var(--s6) var(--s5);
 }
 .closing-art { width: min(100%, 280px); height: auto; justify-self: center; }
+.closing-body { min-width: 0; }
 .closing-title { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-top: var(--s3); }
 .closing-lede { font-size: var(--fs-sm); color: var(--text-2); line-height: 1.7; margin: var(--s4) 0 0; max-width: 46ch; }
 .closing-actions { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s5); }
