@@ -256,7 +256,8 @@
   transition: background var(--t-fast), color var(--t-fast);
 }
 .segment.active { background: var(--ink); color: var(--on-ink); }
-.content > .segmented { margin-bottom: var(--s5); }
+.content > .segmented,
+.content > .refreshed > .segmented { margin-bottom: var(--s5); }
 .segment-count { font-variant-numeric: tabular-nums; opacity: 0.6; font-weight: 700; }
 @media (hover: hover) { .segment:hover:not(.active) { color: var(--text); } }
 

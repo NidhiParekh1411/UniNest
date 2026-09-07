@@ -100,7 +100,7 @@ export function Refreshed({ token, className = '', children }) {
     node.classList.add('swapped');
   }, [token]);
 
-  return <div ref={ref} className={className}>{children}</div>;
+  return <div ref={ref} className={`refreshed${className ? ` ${className}` : ''}`}>{children}</div>;
 }
 
 export function Skeleton({ height = 16, width = '100%', style }) {
