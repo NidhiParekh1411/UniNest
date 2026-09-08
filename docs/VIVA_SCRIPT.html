@@ -1,0 +1,743 @@
+<title>UniNest Viva Script</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  /* Tokens mirror web/src/styles/theme.css so this document looks like the
+     product it describes: warm-grey ground, white blocks, ink text, four
+     pastels used for identity only. Cards get a 1px border, never a shadow. */
+  :root {
+    --bg:        #F5F5F4;
+    --surface:   #FFFFFF;
+    --surface-2: #EFEFED;
+    --ink:       #202124;
+    --text:      #202124;
+    --text-2:    #5B5D62;
+    --text-3:    #86888E;
+    --border:    #E2E1DD;
+    --border-strong: #CFCEC9;
+
+    --lime:      #DAF39F;
+    --sky:       #CDE8F7;
+    --lavender:  #EBD3FF;
+    --peach:     #FFDEB0;
+    --lime-ink:  #4E6B12;
+    --sky-ink:   #1C5C7E;
+
+    --font: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px;
+    --s6: 32px; --s7: 48px; --s8: 64px;
+    --r: 10px; --r-lg: 14px; --r-full: 999px;
+    --maxw: 820px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #131416;
+      --surface:   #1C1D20;
+      --surface-2: #26282C;
+      --ink:       #F3F2EF;
+      --text:      #ECEBE8;
+      --text-2:    #A6A8AE;
+      --text-3:    #7E8087;
+      --border:    #2E3034;
+      --border-strong: #3D4045;
+
+      --lime:      #8FAF52;
+      --sky:       #6FA6C4;
+      --lavender:  #A98CC4;
+      --peach:     #C99A55;
+      --lime-ink:  #C3E38A;
+      --sky-ink:   #9BD0EC;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:        #131416;
+    --surface:   #1C1D20;
+    --surface-2: #26282C;
+    --ink:       #F3F2EF;
+    --text:      #ECEBE8;
+    --text-2:    #A6A8AE;
+    --text-3:    #7E8087;
+    --border:    #2E3034;
+    --border-strong: #3D4045;
+
+    --lime:      #8FAF52;
+    --sky:       #6FA6C4;
+    --lavender:  #A98CC4;
+    --peach:     #C99A55;
+    --lime-ink:  #C3E38A;
+    --sky-ink:   #9BD0EC;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15.5px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: var(--s7) var(--s5) var(--s8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s7);
+  }
+
+  /* ---------------------------------------------------------------- header */
+  .masthead { display: flex; flex-direction: column; gap: var(--s4); }
+  .eyebrow {
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  h1 {
+    margin: 0; font-size: clamp(30px, 5.5vw, 42px); font-weight: 800;
+    letter-spacing: -0.025em; line-height: 1.15; text-wrap: balance;
+    color: var(--ink);
+  }
+  /* The lime highlighter from the product. Drawn at the font's content area,
+     so the line-height is set deliberately — see the --mark-lh note in
+     docs/UI_GUIDE.md. */
+  .mark {
+    background: var(--lime);
+    color: #202124;
+    padding: 0 6px; border-radius: 4px;
+    box-decoration-break: clone; -webkit-box-decoration-break: clone;
+  }
+  .standfirst {
+    margin: 0; font-size: 17px; color: var(--text-2); max-width: 62ch;
+  }
+
+  .facts {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border); border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+  @media (min-width: 620px) { .facts { grid-template-columns: repeat(4, 1fr); } }
+  .fact { background: var(--surface); padding: var(--s4) var(--s4) var(--s5); }
+  .fact-v {
+    font-size: 22px; font-weight: 800; color: var(--ink);
+    font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+  }
+  .fact-k { font-size: 12px; color: var(--text-3); font-weight: 600; }
+
+  .howto {
+    border-left: 3px solid var(--sky);
+    padding: var(--s2) 0 var(--s2) var(--s4);
+    color: var(--text-2); font-size: 14.5px;
+  }
+
+  /* ----------------------------------------------------------------- phase */
+  .phases { display: flex; flex-direction: column; gap: var(--s6); }
+
+  .phase {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--s5);
+    display: flex; flex-direction: column; gap: var(--s4);
+  }
+  @media (min-width: 720px) { .phase { padding: var(--s6); } }
+
+  .phase-head { display: flex; align-items: flex-start; gap: var(--s4); }
+  /* A flat pastel square, not a circle — the product's block vocabulary.
+     The number is real information: these are ordered stages. */
+  .phase-no {
+    flex: none; width: 34px; height: 34px; border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 13px; font-weight: 800; color: #202124;
+    font-variant-numeric: tabular-nums;
+  }
+  .p1 .phase-no { background: var(--lime); }
+  .p2 .phase-no { background: var(--sky); }
+  .p3 .phase-no { background: var(--lavender); }
+  .p4 .phase-no { background: var(--peach); }
+  .p5 .phase-no { background: var(--lime); }
+  .p6 .phase-no { background: var(--sky); }
+
+  .phase-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .phase-when { font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em;
+                text-transform: uppercase; color: var(--text-3); }
+  h2 {
+    margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -0.02em;
+    color: var(--ink); text-wrap: balance;
+  }
+
+  h3 {
+    margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  .block { display: flex; flex-direction: column; gap: var(--s3); }
+
+  ul { margin: 0; padding-left: 1.15em; display: flex; flex-direction: column; gap: var(--s2); }
+  li::marker { color: var(--text-3); }
+  li > strong { color: var(--ink); font-weight: 700; }
+
+  /* What to actually say out loud. A rail in the phase colour, never a fill. */
+  .say {
+    border-left: 3px solid var(--border-strong);
+    padding: var(--s3) 0 var(--s3) var(--s4);
+    display: flex; flex-direction: column; gap: var(--s2);
+  }
+  .p1 .say { border-left-color: var(--lime); }
+  .p2 .say { border-left-color: var(--sky); }
+  .p3 .say { border-left-color: var(--lavender); }
+  .p4 .say { border-left-color: var(--peach); }
+  .p5 .say { border-left-color: var(--lime); }
+  .p6 .say { border-left-color: var(--sky); }
+  .say-k { font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+           text-transform: uppercase; color: var(--text-3); }
+  .say p { margin: 0; font-size: 15.5px; color: var(--text); }
+
+  code {
+    font-family: var(--mono); font-size: 0.86em;
+    background: var(--surface-2); color: var(--text);
+    padding: 1.5px 5px; border-radius: 4px;
+    word-break: break-word;
+  }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--r); }
+  table { border-collapse: collapse; width: 100%; min-width: 460px; font-size: 14px; }
+  th, td { text-align: left; padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border);
+           vertical-align: top; }
+  th { font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase;
+       color: var(--text-3); font-weight: 700; background: var(--surface-2); }
+  tbody tr:last-child td { border-bottom: none; }
+  td:first-child { font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+  /* ------------------------------------------------------------------- Q&A */
+  .qa { display: flex; flex-direction: column; gap: 1px;
+        background: var(--border); border: 1px solid var(--border);
+        border-radius: var(--r-lg); overflow: hidden; }
+  .qa-item { background: var(--surface); padding: var(--s4) var(--s5); }
+  .q { font-weight: 700; color: var(--ink); margin: 0 0 var(--s1); }
+  .a { margin: 0; color: var(--text-2); font-size: 14.5px; }
+
+  footer { color: var(--text-3); font-size: 13px; border-top: 1px solid var(--border);
+           padding-top: var(--s4); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+  }
+</style>
+
+<div class="wrap">
+
+  <!-- ============================================================ masthead -->
+  <header class="masthead">
+    <div class="eyebrow">Project viva · script and talking points</div>
+    <h1>How we built <span class="mark">UniNest</span></h1>
+    <p class="standfirst">
+      A college assistant that answers student questions from the college's own
+      documents — and says <em>"not found in official documents"</em> instead of
+      guessing. Built by a team of two. This page walks the six phases in order,
+      with the actual decisions we took and the reason for each one.
+    </p>
+
+    <div class="facts">
+      <div class="fact"><div class="fact-v">3</div><div class="fact-k">roles</div></div>
+      <div class="fact"><div class="fact-v">11</div><div class="fact-k">screens</div></div>
+      <div class="fact"><div class="fact-v">12</div><div class="fact-k">collections</div></div>
+      <div class="fact"><div class="fact-v">~11.9k</div><div class="fact-k">lines of code</div></div>
+    </div>
+
+    <p class="howto">
+      <strong>How to use this:</strong> each phase has what we did, why we did it,
+      and one line you can say out loud. The last section is the questions most
+      likely to be asked, with short answers.
+    </p>
+  </header>
+
+  <div class="phases">
+
+    <!-- ========================================================== phase 01 -->
+    <section class="phase p1">
+      <div class="phase-head">
+        <div class="phase-no">01</div>
+        <div class="phase-titles">
+          <div class="phase-when">Phase one</div>
+          <h2>Gathering the requirements</h2>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>What we did</h3>
+        <ul>
+          <li>We started from a <strong>problem statement deck</strong> given to us
+            (<code>reference/college_rag_assistant_presentation.pptx</code>). Both of us
+            read it separately, then compared notes.</li>
+          <li>The core problem: <strong>student information is scattered</strong> across
+            circulars, timetables, syllabi and policy PDFs. There is no single place to
+            search. Documents get revised, so even the right PDF can be out of date. The
+            same questions keep landing on faculty and admin.</li>
+          <li>We <strong>asked questions back</strong> rather than assuming. The answers
+            changed the design: Do students in different semesters see different
+            timetables? (Yes.) Does one faculty member teach across semesters? (Yes.)
+            Should admin and faculty share a login screen? (Yes — but students get their
+            own.) Can a student upload handwritten work? (Yes.)</li>
+          <li>We wrote everything down in <code>docs/REQUIREMENTS.md</code>, split into
+            <strong>functional</strong> (what it must do) and <strong>non-functional</strong>
+            (how it must feel and perform), so nobody had to reopen the deck again.</li>
+          <li>We also recorded the <strong>questions we could not answer yet</strong> —
+            six of them, like "should this plug into the existing college portal?" — as
+            open items rather than pretending we had decided.</li>
+        </ul>
+      </div>
+
+      <div class="say">
+        <div class="say-k">Say this</div>
+        <p>"We didn't just take the deck at face value. We turned it into a written
+        requirements document, separated what the system must do from how it must
+        behave, and kept a list of open questions we deliberately deferred instead of
+        guessing at."</p>
+      </div>
+    </section>
+
+    <!-- ========================================================== phase 02 -->
+    <section class="phase p2">
+      <div class="phase-head">
+        <div class="phase-no">02</div>
+        <div class="phase-titles">
+          <div class="phase-when">Phase two</div>
+          <h2>Analysis and feasibility</h2>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>What we checked first</h3>
+        <ul>
+          <li><strong>What already exists:</strong> colleges already have ERP portals, but
+            they store records — they do not answer questions from documents. That gap is
+            our project.</li>
+          <li><strong>What is actually feasible for us:</strong> the deck proposed one
+            stack. We tested it on our own machines before committing, and changed parts
+            of it. That is the most important thing in this phase.</li>
+          <li><strong>What to keep and what to drop:</strong> we scoped a Phase 1 that is
+            complete and demo-ready, and wrote the rest down as known, deliberate gaps in
+            <code>docs/PROJECT_STATE.md</code> rather than leaving them as loose ends.</li>
+        </ul>
+      </div>
+
+      <div class="block">
+        <h3>The technical decisions, and why</h3>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>Decision</th><th>What we chose</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Backend language</td>
+                <td>Node.js 20 + Express, not Python</td>
+                <td>The Python on our machines was 3.9.1. The ML libraries the deck
+                    suggested were slow and kept failing to install. Node gave us one
+                    runtime for both frontend and backend, and it installed cleanly.</td>
+              </tr>
+              <tr>
+                <td>AI provider</td>
+                <td>Google Gemini, free tier</td>
+                <td>It has a genuinely free tier and does not need a credit card. We
+                    put it behind an adapter (<code>src/rag/llm.js</code>) so it can be
+                    swapped without touching the rest of the code.</td>
+              </tr>
+              <tr>
+                <td>Working without a key</td>
+                <td>Offline extractive fallback</td>
+                <td>The free tier is capped <em>per day</em>. If the quota runs out mid-demo,
+                    the app must not break — it drops to answering with the retrieved text
+                    itself, and it <strong>tells you</strong> it downgraded.</td>
+              </tr>
+              <tr>
+                <td>Search / retrieval</td>
+                <td>BM25 in plain JavaScript</td>
+                <td>The deck wanted sentence-transformer embeddings and a vector database.
+                    That needs Python, a model download and a server. BM25 is a proven
+                    keyword-ranking algorithm that runs with <strong>zero API keys and no
+                    network</strong> — so the demo always works.</td>
+              </tr>
+              <tr>
+                <td>Database</td>
+                <td>MongoDB</td>
+                <td>Our records are document-shaped and the fields differ by role. Mongo
+                    fit that without migrations. We also wrote a JSON-file fallback so a
+                    fresh clone runs with no database at all.</td>
+              </tr>
+              <tr>
+                <td>Charts</td>
+                <td>Hand-written SVG</td>
+                <td>A charting library would have brought its own look. We wanted the
+                    charts to match our design exactly, with no extra dependency.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>Designing the database and its test data</h3>
+        <ul>
+          <li>We listed every <strong>collection</strong> (Mongo's version of a table)
+            straight from the requirements — <code>users</code>, <code>subjects</code>,
+            <code>timetable</code>, <code>attendance</code>, <code>results</code>,
+            <code>documents</code>, <code>chunks</code>, <code>assignments</code>,
+            <code>submissions</code>, <code>announcements</code>,
+            <code>questionbanks</code>, <code>conversations</code>. Twelve in total.</li>
+          <li>Every record keeps its <strong>own readable id</strong> (<code>usr_stu009</code>,
+            <code>sub_CE5_3150703</code>) instead of relying on Mongo's internal
+            <code>_id</code>. That means ids stay the same when we regenerate the data.</li>
+          <li>We added <strong>indexes based on the queries we actually wrote</strong> —
+            for example <code>attendance</code> is indexed on <code>studentId</code>,
+            because that is how every attendance screen reads it.</li>
+          <li>Real student records are private, so we could not use real data. We wrote a
+            <strong>seed script</strong> (<code>server/src/seed/seed.js</code>) that
+            generates realistic demo data <em>in exactly the shape real records will take</em>,
+            so a college can drop its own data in later.</li>
+          <li>The seed uses a <strong>fixed random seed</strong>, so it produces the same
+            data every time. A demo never looks different twice. Running
+            <code>npm run seed</code> gives us 16 faculty, 72 students, 117 subjects,
+            466 timetable entries, 1,800 results and 14 indexed documents.</li>
+          <li>All database access goes through <strong>one file</strong>,
+            <code>server/src/lib/db.js</code>. No route or AI module talks to Mongo
+            directly — that is how we kept the file-based fallback possible at all.</li>
+        </ul>
+      </div>
+
+      <div class="say">
+        <div class="say-k">Say this</div>
+        <p>"We deliberately deviated from the suggested stack after testing it. Python 3.9
+        on our machines made the ML dependencies fragile, so we moved to Node. And instead
+        of a vector database we used BM25, which means the whole assistant runs with no API
+        key and no internet — the demo can never fail because a quota ran out."</p>
+      </div>
+    </section>
+
+    <!-- ========================================================== phase 03 -->
+    <section class="phase p3">
+      <div class="phase-head">
+        <div class="phase-no">03</div>
+        <div class="phase-titles">
+          <div class="phase-when">Phase three</div>
+          <h2>Design</h2>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>How we decided what it should look like</h3>
+        <ul>
+          <li>Neither of us is a designer, so we <strong>researched instead of guessing</strong>.
+            We searched for college dashboards and student portals, and browsed Dribbble
+            for layout ideas.</li>
+          <li>We <strong>screenshotted everything we liked</strong> and saved it into the
+            repo as <code>screenshots/college_ref(1)</code> through
+            <code>(11)</code>. These became the reference we designed against — not a
+            vague memory of "something clean".</li>
+          <li>Our first version used the theme from the original brief: white background,
+            black text, and an orange-to-pink gradient. When we <strong>looked at it on
+            screen we did not like it</strong> — the gradient was everywhere and every card
+            looked the same.</li>
+          <li>So we <strong>rebuilt the visual system</strong> from our reference
+            screenshots: a warm-grey page (<code>#F5F5F4</code>), white blocks, near-black
+            text, and four soft pastels — lime, sky, lavender and peach.</li>
+          <li>We gave each colour <strong>one job</strong>. Sky always means a document or
+            citation. Lavender always means a lab. Lime marks the selected or active thing.
+            Peach means "needs attention". A colour never just decorates.</li>
+          <li><strong>One typeface — Manrope.</strong> Hierarchy comes from weight and size,
+            not from mixing fonts.</li>
+          <li>We wrote all of this into <code>web/src/styles/theme.css</code> as
+            <strong>design tokens</strong>, and made a rule: a hard-coded colour anywhere
+            else in the code counts as a bug.</li>
+          <li>Mobile was designed <strong>first</strong>, then widened — every screen is
+            checked at 375px, 768px and 1440px.</li>
+        </ul>
+      </div>
+
+      <div class="say">
+        <div class="say-k">Say this</div>
+        <p>"We collected reference screenshots before writing any CSS, and we kept them in
+        the repo. Our first theme came from the brief, but when we saw it running we
+        rejected it and rebuilt the system around flat pastel blocks — where each colour
+        carries a fixed meaning rather than being decoration."</p>
+      </div>
+    </section>
+
+    <!-- ========================================================== phase 04 -->
+    <section class="phase p4">
+      <div class="phase-head">
+        <div class="phase-no">04</div>
+        <div class="phase-titles">
+          <div class="phase-when">Phase four</div>
+          <h2>Setting up AI-assisted development</h2>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>The idea</h3>
+        <ul>
+          <li>We used an AI coding assistant to build this. But an AI assistant with no
+            rules produces <strong>inconsistent code</strong> — a different colour on every
+            screen, a new pattern in every file.</li>
+          <li>So before writing application code, we spent time writing the
+            <strong>rules the AI had to follow</strong>. This is the part of our process we
+            think is genuinely different, and it is worth showing.</li>
+        </ul>
+      </div>
+
+      <div class="block">
+        <h3>The files we wrote first</h3>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>File</th><th>What it does</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>CLAUDE.md</code></td>
+                <td>The project rulebook, read at the start of every session. It holds the
+                    stack table with the reason for each choice, a map of the repo, and
+                    seven <strong>house rules</strong> — design tokens only, mobile is not an
+                    afterthought, all data access through <code>db.js</code>, role scoping is
+                    enforced on the server, the assistant must never guess, every AI path
+                    must degrade <em>and say so</em>, and keep the state file current.</td>
+              </tr>
+              <tr>
+                <td><code>.claude/skills/ui-guide/</code></td>
+                <td>The design system as a loadable skill: the palette, the type scale, the
+                    spacing tokens, and a section called <strong>"the rules that get broken
+                    most"</strong> — for example <em>lime is a background, never text</em>,
+                    because on white it only has 1.3:1 contrast.</td>
+              </tr>
+              <tr>
+                <td><code>.claude/agents/ui-builder.md</code></td>
+                <td>A specialist for frontend work. It is required to load the design
+                    system before writing a single line of a component.</td>
+              </tr>
+              <tr>
+                <td><code>.claude/agents/rag-engineer.md</code></td>
+                <td>A specialist for the AI and retrieval layer. Its brief states the
+                    non-negotiable: grounded answers with citations, and an honest
+                    "not found" when confidence is low.</td>
+              </tr>
+              <tr>
+                <td><code>docs/PROJECT_STATE.md</code></td>
+                <td>The handoff file. At the end of every working session we update what is
+                    done, what is deliberately not done, and where we stopped — so the next
+                    session starts with full context.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>Why this mattered</h3>
+        <ul>
+          <li>We gave the AI <strong>constraints, golden examples and reference
+            screenshots</strong> up front, instead of correcting it afterwards.</li>
+          <li>Some rules exist because we <strong>hit the bug once</strong> and wrote it
+            down so it could not happen again — for example, a CSS mask reads transparency,
+            not colour, and writing it the wrong way silently erased the middle of a
+            scrolling row. That bug is now documented in the guide.</li>
+          <li>The result is that eleven screens built over several sessions still look like
+            one product.</li>
+        </ul>
+      </div>
+
+      <div class="say">
+        <div class="say-k">Say this</div>
+        <p>"Before we built any feature, we built the guardrails. We wrote a project
+        rulebook, a design-system skill and two specialist agent briefs, so the AI worked
+        inside our constraints instead of inventing its own. Reviewing AI output against
+        written rules is much faster than reviewing it against taste."</p>
+      </div>
+    </section>
+
+    <!-- ========================================================== phase 05 -->
+    <section class="phase p5">
+      <div class="phase-head">
+        <div class="phase-no">05</div>
+        <div class="phase-titles">
+          <div class="phase-when">Phase five</div>
+          <h2>Building it, screen by screen</h2>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>The order we worked in, and why</h3>
+        <ul>
+          <li><strong>Landing page first.</strong> It sets the visual language — colours,
+            spacing, typography — with no logic in the way. Once it looked right, every
+            later screen had something to copy.</li>
+          <li><strong>Authentication second.</strong> Nothing else can be built properly
+            until the app knows <em>who is asking</em>. We used JWT tokens signed with
+            HS256, plus role-checking middleware.</li>
+          <li>We built <strong>two sign-in screens</strong> — students on one, faculty and
+            admin sharing the other, as the brief asked. Using a student account on the
+            staff screen is refused with a clear message rather than a generic error.</li>
+          <li><strong>Then the tabs, one at a time:</strong> Dashboard → Assistant →
+            Timetable → Attendance → Results → Assignments → Library → Notices →
+            Question banks → People → Subjects.</li>
+          <li>Each tab followed the same loop: build it mobile-first, wire it to a real
+            API route, check it at three screen widths, then move on.</li>
+        </ul>
+      </div>
+
+      <div class="block">
+        <h3>The two rules we never broke</h3>
+        <ul>
+          <li><strong>Security is enforced on the server, not in the interface.</strong>
+            Hiding a button is not security. Every route that returns student data filters
+            by the identity inside the <em>token</em> — never by an id sent in the request.
+            So a student cannot read another student's attendance even by editing the
+            request by hand.</li>
+          <li><strong>The assistant must never guess.</strong> If the retrieval score is
+            below threshold, it answers "not found in official documents". Any answer drawn
+            from a document must carry a citation naming that document and section. This
+            came straight from the problem statement and it is the core promise of the
+            product.</li>
+        </ul>
+      </div>
+
+      <div class="say">
+        <div class="say-k">Say this</div>
+        <p>"We built the landing page first to lock the visual language, then authentication,
+        because every other screen depends on knowing who is asking. Role scoping is
+        enforced server-side on every route — the UI hiding a button is not security."</p>
+      </div>
+    </section>
+
+    <!-- ========================================================== phase 06 -->
+    <section class="phase p6">
+      <div class="phase-head">
+        <div class="phase-no">06</div>
+        <div class="phase-titles">
+          <div class="phase-when">Phase six</div>
+          <h2>Testing, review and fixing</h2>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>How we tested</h3>
+        <ul>
+          <li><strong>We reviewed it on screen, together.</strong> Several rounds. Most of
+            our real bugs were found by looking at the running app, not by reading code.</li>
+          <li><strong>We tested the AI's honesty deliberately.</strong> We asked questions
+            the documents cannot answer, to confirm it says "not found" instead of
+            inventing something. We also tested the pair "what is my attendance" versus
+            "what is the attendance policy" — one is a record lookup, the other is a
+            document question, and the router has to tell them apart.</li>
+          <li><strong>We tested each role separately</strong>, checking that a student, a
+            faculty member and an admin each see only what they should.</li>
+          <li>We checked <strong>every screen at 375px, 768px and 1440px</strong>, and
+            confirmed no page ever scrolls sideways.</li>
+        </ul>
+      </div>
+
+      <div class="block">
+        <h3>Real bugs we found and fixed</h3>
+        <ul>
+          <li>A CSS mask written like a paint gradient <strong>erased the middle of a
+            scrolling row</strong> instead of fading its edges. It happened in two separate
+            components before we understood the cause and wrote it into the guide.</li>
+          <li>Closing the document viewer <strong>blanked the whole library back to loading
+            bars</strong>. We separated "nothing has loaded yet" from "checking for newer
+            data", so a refresh now updates in place instead of looking like a page reload.</li>
+          <li>The filter pills on the Assignments tab <strong>sat too close to the list</strong>.
+            The spacing rule only matched a direct child, and on that one screen the pills
+            sit inside a wrapper element, so the rule silently did not apply.</li>
+          <li>Colouring every card by status made <strong>every screen look the same green</strong>,
+            because most students are above the threshold. We changed it so a colour marks
+            identity as a thin rail down the card edge, and status only appears on the badge
+            and the meter.</li>
+        </ul>
+      </div>
+
+      <div class="say">
+        <div class="say-k">Say this</div>
+        <p>"The bugs worth talking about were not crashes — they were things that looked
+        fine in code and wrong on screen. We fixed each one and then wrote the reason into
+        the design guide, so the same mistake could not come back."</p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ================================================================= Q&A -->
+  <section class="block">
+    <h3>Questions you are most likely to be asked</h3>
+    <div class="qa">
+      <div class="qa-item">
+        <p class="q">Why Node.js and not Python? Python is standard for AI.</p>
+        <p class="a">We tried Python first. Our local version was 3.9.1 and the ML
+        libraries were slow and fragile to install. We also decided not to run models
+        ourselves — the AI is called through an API — so Python's ML ecosystem was not
+        actually needed. Node gave us one language across frontend and backend.</p>
+      </div>
+      <div class="qa-item">
+        <p class="q">Why BM25 instead of embeddings and a vector database?</p>
+        <p class="a">Embeddings need a model, a vector database and a network call.
+        BM25 is a well-established keyword-ranking algorithm that runs locally with zero
+        API keys, so the assistant works even offline. For a fixed set of college documents
+        with specific terms like subject codes, keyword matching performs well. Embeddings
+        are a planned upgrade, and the retrieval layer is isolated so we can swap it.</p>
+      </div>
+      <div class="qa-item">
+        <p class="q">How do you stop it from making things up?</p>
+        <p class="a">Two gates. Retrieval must clear both a score threshold and a term-coverage
+        threshold; if either fails, the answer is "not found in official documents". And any
+        document-based answer must return citations — the document, the section and an
+        excerpt — which the interface displays separately from the answer text.</p>
+      </div>
+      <div class="qa-item">
+        <p class="q">What happens if the AI API quota runs out during the demo?</p>
+        <p class="a">It falls back to composing the answer from the retrieved passages
+        directly, and it reports that it has downgraded. We treat a silent downgrade as the
+        worst outcome — answers keep coming, they are just worse, and nobody knows why.</p>
+      </div>
+      <div class="qa-item">
+        <p class="q">Is the student data real?</p>
+        <p class="a">No, and deliberately. Real records are private. We wrote a generator
+        that produces realistic demo data in exactly the shape real records take, so a
+        college can substitute its own data without changing any code. The documents the
+        assistant answers from are real public circulars.</p>
+      </div>
+      <div class="qa-item">
+        <p class="q">How is one student stopped from seeing another's marks?</p>
+        <p class="a">Every route filters by the identity inside the signed JWT, never by an
+        id in the request body. Even if someone edits the request by hand, the server
+        answers only for the token's owner.</p>
+      </div>
+      <div class="qa-item">
+        <p class="q">You used AI to write the code. What did you actually do?</p>
+        <p class="a">We defined the problem, chose the stack and justified it, designed the
+        data model, set the design system, and wrote the constraints the AI had to work
+        inside — the rulebook, the design skill and the agent briefs. Then we reviewed
+        every screen and fixed what was wrong. The engineering judgement is in the
+        decisions and the review, and both are written down in the repo.</p>
+      </div>
+      <div class="qa-item">
+        <p class="q">What would you do next?</p>
+        <p class="a">Move retrieval to embeddings for better handling of reworded questions,
+        add support for Gujarati and Hindi queries, and connect to the college's real record
+        system instead of seeded data. All three are listed as known gaps in
+        <code>docs/PROJECT_STATE.md</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    UniNest · Phase 1. Written from the project's own documents —
+    <code>CLAUDE.md</code>, <code>docs/REQUIREMENTS.md</code> and
+    <code>docs/PROJECT_STATE.md</code>.
+  </footer>
+
+</div>
