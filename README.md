@@ -1,4 +1,4 @@
-# UniNest - Project by Nidhi & Venisha
+# UniNest - Project by Nidhi & Naitik
   
 An AI knowledge assistant for a college: a retrieval-grounded chatbot plus the
 structured records — timetables, attendance, results, assignments — that student
