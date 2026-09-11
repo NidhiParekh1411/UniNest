@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UniNest Folder Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  /* Same tokens as docs/VIVA_SCRIPT.html, which mirror web/src/styles/theme.css. */
+  :root {
+    --bg:        #F5F5F4;
+    --surface:   #FFFFFF;
+    --surface-2: #EFEFED;
+    --ink:       #202124;
+    --text:      #202124;
+    --text-2:    #5B5D62;
+    --text-3:    #86888E;
+    --border:    #E2E1DD;
+    --border-strong: #CFCEC9;
+
+    --lime:      #DAF39F;
+    --sky:       #CDE8F7;
+    --lavender:  #EBD3FF;
+    --peach:     #FFDEB0;
+
+    --font: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px;
+    --s6: 32px; --s7: 48px; --s8: 64px;
+    --r: 10px; --r-lg: 14px;
+    --maxw: 860px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #131416; --surface: #1C1D20; --surface-2: #26282C;
+      --ink: #F3F2EF; --text: #ECEBE8; --text-2: #A6A8AE; --text-3: #7E8087;
+      --border: #2E3034; --border-strong: #3D4045;
+      --lime: #8FAF52; --sky: #6FA6C4; --lavender: #A98CC4; --peach: #C99A55;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #131416; --surface: #1C1D20; --surface-2: #26282C;
+    --ink: #F3F2EF; --text: #ECEBE8; --text-2: #A6A8AE; --text-3: #7E8087;
+    --border: #2E3034; --border-strong: #3D4045;
+    --lime: #8FAF52; --sky: #6FA6C4; --lavender: #A98CC4; --peach: #C99A55;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: var(--s7) var(--s4) var(--s8);
+    display: flex; flex-direction: column; gap: var(--s6);
+  }
+
+  .eyebrow {
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  h1 {
+    margin: var(--s2) 0 var(--s3); font-size: clamp(28px, 5vw, 38px); font-weight: 800;
+    letter-spacing: -0.025em; line-height: 1.15; color: var(--ink);
+  }
+  .standfirst { margin: 0; font-size: 16.5px; color: var(--text-2); max-width: 62ch; }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: var(--s2); }
+  nav.toc a {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    text-decoration: none; padding: 4px 10px;
+    border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--border-strong); }
+
+  section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--s5) var(--s4);
+    display: flex; flex-direction: column; gap: var(--s4);
+    scroll-margin-top: var(--s4);
+  }
+  @media (min-width: 720px) { section { padding: var(--s6); } }
+
+  .head { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
+  .tag {
+    flex: none; font-family: var(--mono); font-size: 13px; font-weight: 500;
+    padding: 2px 8px; border-radius: 6px; color: #202124;
+  }
+  .t-lime { background: var(--lime); }
+  .t-sky { background: var(--sky); }
+  .t-lav { background: var(--lavender); }
+  .t-peach { background: var(--peach); }
+
+  h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+  h3 {
+    margin: var(--s2) 0 0; font-size: 12px; font-weight: 700; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  p { margin: 0; }
+  .lede { color: var(--text-2); }
+
+  code {
+    font-family: var(--mono); font-size: 0.86em;
+    background: var(--surface-2); padding: 1px 5px; border-radius: 4px;
+    overflow-wrap: anywhere;
+  }
+  pre {
+    margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.55;
+    background: var(--surface-2); border-radius: var(--r); padding: var(--s4);
+    overflow-x: auto;
+  }
+
+  .tbl { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; width: 1%; }
+  td:first-child code { background: transparent; padding: 0; font-weight: 500; color: var(--ink); }
+
+  ol.flow { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: var(--s2); }
+  ol.flow li::marker { color: var(--text-3); font-weight: 700; }
+
+  .qa { display: flex; flex-direction: column; gap: var(--s4); }
+  .q { font-weight: 700; color: var(--ink); }
+  .a { color: var(--text-2); border-left: 3px solid var(--lime); padding-left: var(--s3); margin-top: 2px; }
+
+  footer { font-size: 13px; color: var(--text-3); text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">UniNest · College RAG Assistant</div>
+    <h1>Folder guide</h1>
+    <p class="standfirst">Every folder in the project, what is inside it, and what each file does, one line each.
+      The last two sections trace a question and an upload through the code, then give short answers to likely viva questions.</p>
+  </header>
+
+  <nav class="toc" aria-label="Sections">
+    <a href="#map">Map</a>
+    <a href="#root">Root files</a>
+    <a href="#claude">.claude</a>
+    <a href="#assets">assets</a>
+    <a href="#docs">docs</a>
+    <a href="#reference">reference</a>
+    <a href="#screenshots">screenshots</a>
+    <a href="#scripts">scripts</a>
+    <a href="#server">server</a>
+    <a href="#web">web</a>
+    <a href="#flows">How it flows</a>
+    <a href="#viva">Viva Q&amp;A</a>
+  </nav>
+
+  <!-- ============================================================ MAP -->
+  <section id="map">
+    <div class="head"><h2>The whole project at a glance</h2></div>
+    <p class="lede">Two apps in one repo: <strong>server</strong> is the backend (Node + Express), <strong>web</strong> is the frontend (React + Vite). Everything else is documentation, design material or tooling.</p>
+<pre>UniNest/
+├── .claude/        Claude Code helpers (AI agent + design-skill definitions)
+├── assets/         original owl mascot artwork
+├── docs/           project documentation (this file lives here)
+├── reference/      the original problem-statement presentation (.pptx)
+├── screenshots/    UI reference designs the look was based on
+├── scripts/        dev.js starts backend + frontend together
+├── server/         BACKEND: API, database layer, RAG/AI engine, demo data
+│   ├── src/
+│   │   ├── index.js    starts the Express server
+│   │   ├── lib/        shared helpers: database, auth, file parsing
+│   │   ├── routes/     one file per API resource
+│   │   ├── rag/        the chatbot brain (search, intent, answers)
+│   │   └── seed/       generates demo data
+│   └── data/       JSON data files + uploaded files
+├── web/            FRONTEND: React app
+│   ├── public/     static images (mascot, photos, favicon)
+│   └── src/
+│       ├── components/ reusable UI pieces
+│       ├── pages/      one file per screen
+│       ├── lib/        API calls, login state, helpers
+│       └── styles/     design tokens + CSS
+└── node_modules/   installed packages (not committed)</pre>
+  </section>
+
+  <!-- ============================================================ ROOT -->
+  <section id="root">
+    <div class="head"><span class="tag t-lime">/</span><h2>Root files</h2></div>
+    <div class="tbl"><table>
+      <tr><th>File</th><th>What it is</th></tr>
+      <tr><td><code>package.json</code></td><td>Root manifest. Declares two <strong>workspaces</strong> (<code>server</code>, <code>web</code>) and the commands: <code>dev</code>, <code>seed</code>, <code>build</code>, <code>eval</code>, <code>smoke</code>.</td></tr>
+      <tr><td><code>package-lock.json</code></td><td>Exact installed versions of every package, so installs are repeatable.</td></tr>
+      <tr><td><code>README.md</code></td><td>Short project overview: features, stack, setup, tests, configuration.</td></tr>
+      <tr><td><code>CLAUDE.md</code></td><td>Working rules for the project (design tokens only, all data through <code>db.js</code>, roles checked on the server, never guess).</td></tr>
+      <tr><td><code>.gitignore</code></td><td>Keeps <code>node_modules</code>, <code>.env</code>, data JSON files and uploads out of Git.</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ============================================================ .CLAUDE -->
+  <section id="claude">
+    <div class="head"><span class="tag t-sky">.claude/</span><h2>AI coding assistant setup</h2></div>
+    <p class="lede">Configuration for Claude Code, the AI tool used while building. <strong>Not part of the running app.</strong></p>
+    <div class="tbl"><table>
+      <tr><th>Path</th><th>What it is</th></tr>
+      <tr><td><code>agents/rag-engineer.md</code></td><td>Instructions for a helper focused on the retrieval/AI code in <code>server/src/rag</code>.</td></tr>
+      <tr><td><code>agents/ui-builder.md</code></td><td>Instructions for a helper focused on React screens in <code>web/src</code>.</td></tr>
+      <tr><td><code>skills/ui-guide/SKILL.md</code></td><td>The design system as a reusable skill: colours, fonts, spacing, breakpoints.</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ============================================================ ASSETS -->
+  <section id="assets">
+    <div class="head"><span class="tag t-lav">assets/</span><h2>Original artwork</h2></div>
+    <p>Three source images of the <strong>owl mascot</strong>. The optimised versions actually shown in the app are in <code>web/public/brand/</code>.</p>
+  </section>
+
+  <!-- ============================================================ DOCS -->
+  <section id="docs">
+    <div class="head"><span class="tag t-peach">docs/</span><h2>Documentation</h2></div>
+    <div class="tbl"><table>
+      <tr><th>File</th><th>What it covers</th></tr>
+      <tr><td><code>PROJECT_STATE.md</code></td><td>Status of every feature, known limitations, demo logins, what to do next.</td></tr>
+      <tr><td><code>REQUIREMENTS.md</code></td><td>The requirements from the presentation, written out as text.</td></tr>
+      <tr><td><code>UI_GUIDE.md</code></td><td>The design system and the reasoning behind it.</td></tr>
+      <tr><td><code>AI_APPROACH.html</code></td><td>How the AI/RAG part works.</td></tr>
+      <tr><td><code>DATABASE_SETUP.html</code></td><td>How to connect MongoDB (Atlas or local).</td></tr>
+      <tr><td><code>VIVA_SCRIPT.html</code></td><td>A script for presenting the project in the viva.</td></tr>
+      <tr><td><code>IMAGES.md</code></td><td>Where every image came from and where it is used.</td></tr>
+      <tr><td><code>ABOUT_SOURCES.md</code></td><td>Sources for the GLS University facts on the About page.</td></tr>
+      <tr><td><code>FOLDER_GUIDE.html</code></td><td>This file.</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ============================================================ REFERENCE -->
+  <section id="reference">
+    <div class="head"><span class="tag t-lime">reference/</span><h2>Problem statement</h2></div>
+    <p><code>college_rag_assistant_presentation.pptx</code>: the original slide deck the project was built from. <code>docs/REQUIREMENTS.md</code> has the same content as text.</p>
+  </section>
+
+  <!-- ============================================================ SCREENSHOTS -->
+  <section id="screenshots">
+    <div class="head"><span class="tag t-sky">screenshots/</span><h2>Design references</h2></div>
+    <p>13 reference designs (<code>college_ref(1)</code> to <code>(11)</code>, plus <code>reference_1</code> and <code>reference_2</code>). The UI's look (layout, pastel colours, cards) was modelled on these. They are not used by the code.</p>
+  </section>
+
+  <!-- ============================================================ SCRIPTS -->
+  <section id="scripts">
+    <div class="head"><span class="tag t-lav">scripts/</span><h2>Dev tooling</h2></div>
+    <p><code>dev.js</code> runs the backend (port 4000) and the frontend (port 5173) together in one terminal, with each line of output labelled <code>api</code> or <code>web</code>. It is what <code>npm run dev</code> calls.</p>
+  </section>
+
+  <!-- ============================================================ SERVER -->
+  <section id="server">
+    <div class="head"><span class="tag t-peach">server/</span><h2>Backend (Node.js + Express)</h2></div>
+    <p class="lede">The API the frontend talks to. It handles login, stores and returns records, and runs the chatbot.</p>
+
+    <div class="tbl"><table>
+      <tr><th>File</th><th>What it is</th></tr>
+      <tr><td><code>package.json</code></td><td>Backend packages: express, cors, jsonwebtoken, bcryptjs, multer, dotenv, pdf-parse, mammoth, xlsx, mongodb.</td></tr>
+      <tr><td><code>.env.example</code></td><td>Template for settings: port, JWT secret, MongoDB URI, <code>DB_DRIVER</code>, optional Gemini key.</td></tr>
+      <tr><td><code>src/index.js</code></td><td><strong>Entry point.</strong> Creates the Express app, connects the database, mounts every route under <code>/api/...</code>, handles errors.</td></tr>
+      <tr><td><code>src/smoke.mjs</code></td><td>End-to-end test: logs in as each role and calls the real API (<code>npm run smoke</code>).</td></tr>
+    </table></div>
+
+    <h3>src/lib/ · shared helpers</h3>
+    <div class="tbl"><table>
+      <tr><td><code>db.js</code></td><td><strong>The only file that talks to the database.</strong> Uses MongoDB if it can reach one, otherwise falls back to the JSON files in <code>server/data/</code>. Every method is async.</td></tr>
+      <tr><td><code>auth.js</code></td><td>Password hashing (bcrypt), JWT tokens (valid 12 hours), <code>authenticate</code> and <code>requireRole</code> middleware, <code>scopeOf</code> for who is asking.</td></tr>
+      <tr><td><code>parse.js</code></td><td>Pulls text out of uploads, picking the right extractor for each type: PDF, Word, Excel/CSV, PowerPoint, text, images.</td></tr>
+      <tr><td><code>async-routes.js</code></td><td>Makes errors thrown in async route handlers reach Express's error handler, so a failed request returns a 500 instead of hanging.</td></tr>
+    </table></div>
+
+    <h3>src/routes/ · the API, one file per resource</h3>
+    <div class="tbl"><table>
+      <tr><th>File</th><th>URL</th><th>Does</th></tr>
+      <tr><td><code>auth.js</code></td><td><code>/api/auth</code></td><td>Login. A student account cannot sign in on the staff portal, and a staff account cannot sign in on the student portal.</td></tr>
+      <tr><td><code>chat.js</code></td><td><code>/api/chat</code></td><td>Sends a question to the chatbot, saves the conversation, returns typing suggestions.</td></tr>
+      <tr><td><code>academics.js</code></td><td><code>/api/academics</code></td><td>Subjects, timetable, attendance, results. Faculty and admin can mark attendance and publish results.</td></tr>
+      <tr><td><code>documents.js</code></td><td><code>/api/documents</code></td><td>Upload, list, view, download and delete circulars/notes. Staff only for upload and delete.</td></tr>
+      <tr><td><code>assignments.js</code></td><td><code>/api/assignments</code></td><td>Create assignments, submit files, grade them.</td></tr>
+      <tr><td><code>announcements.js</code></td><td><code>/api/announcements</code></td><td>Notices, including ones scheduled to appear later.</td></tr>
+      <tr><td><code>questionbank.js</code></td><td><code>/api/question-banks</code></td><td>Generate question-bank drafts. Students only see banks that faculty have published.</td></tr>
+      <tr><td><code>users.js</code></td><td><code>/api/users</code></td><td>User directory (staff); create, edit and delete users (admin).</td></tr>
+      <tr><td><code>overview.js</code></td><td><code>/api/overview</code></td><td>Dashboard numbers. Each role gets a different payload.</td></tr>
+    </table></div>
+
+    <h3>src/rag/ · the chatbot brain</h3>
+    <div class="tbl"><table>
+      <tr><td><code>answer.js</code></td><td><strong>Orchestrator.</strong> <code>ask()</code> runs the pipeline: check for missing details, then classify the intent, then look up a record or search documents, then write the answer with citations.</td></tr>
+      <tr><td><code>router.js</code></td><td>Intent detection. It decides whether a question needs a <em>record lookup</em> ("my attendance") or a <em>document search</em> ("attendance policy").</td></tr>
+      <tr><td><code>structured.js</code></td><td>Answers record questions (timetable, attendance, results) straight from the database.</td></tr>
+      <tr><td><code>retrieve.js</code></td><td>Document search with role filtering, newest version only, and the confidence gate that refuses to guess (<code>MIN_SCORE</code>, <code>MIN_COVERAGE</code>).</td></tr>
+      <tr><td><code>index.js</code></td><td>The in-memory <strong>BM25</strong> search index over document passages. It is rebuilt when documents change.</td></tr>
+      <tr><td><code>chunk.js</code></td><td>Splits document text into passages of about 700 characters, made of whole sentences with one sentence of overlap. It also tags each passage with its section heading.</td></tr>
+      <tr><td><code>tokenize.js</code></td><td>Turns text into search words: drops stopwords and maps synonyms together (e.g. "CGPA" and "CPI"). The index and the query use the same rules.</td></tr>
+      <tr><td><code>llm.js</code></td><td>AI adapter. The default is <strong>extractive</strong> (offline, quotes sentences only). With <code>GEMINI_API_KEY</code> it uses Gemini. <code>providerStatus()</code> reports which one is active.</td></tr>
+      <tr><td><code>generate.js</code></td><td>Builds question-bank drafts from uploaded material, across Bloom's levels. Always saved as a draft.</td></tr>
+      <tr><td><code>enrich.js</code></td><td>Optional background step after an upload (Gemini only). It reads scanned files and writes a summary, topics and tags.</td></tr>
+      <tr><td><code>suggest.js</code></td><td>Suggestions while typing (e.g. "exam" brings up exam actions), filtered by role.</td></tr>
+      <tr><td><code>__eval__.js</code></td><td>Test set of 26 cases for routing, citations and refusals (<code>npm run eval</code>).</td></tr>
+    </table></div>
+
+    <h3>src/seed/ · demo data</h3>
+    <div class="tbl"><table>
+      <tr><td><code>seed.js</code></td><td>Wipes and regenerates all demo data: users, subjects, timetable, attendance, results, documents (<code>npm run seed</code>). It uses a fixed random seed, so every run gives the same data.</td></tr>
+      <tr><td><code>catalogue.js</code></td><td>Subject list per branch (CE, IT, ME) and semester (1–8), plus faculty and student names.</td></tr>
+      <tr><td><code>corpus.js</code></td><td>The demo policy documents (attendance rules, exams, etc.) the chatbot searches.</td></tr>
+    </table></div>
+
+    <h3>data/ · storage (not committed to Git)</h3>
+    <div class="tbl"><table>
+      <tr><td><code>*.json</code></td><td>One file per collection: users, subjects, timetable, attendance, results, documents, chunks, assignments, submissions, announcements, questionbanks, conversations. Used when MongoDB is not available.</td></tr>
+      <tr><td><code>uploads/</code></td><td>The uploaded files themselves. The database stores only a record pointing to each file.</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ============================================================ WEB -->
+  <section id="web">
+    <div class="head"><span class="tag t-lime">web/</span><h2>Frontend (React 18 + Vite)</h2></div>
+    <p class="lede">What the user sees. Plain CSS with no UI framework, hand-drawn SVG charts and icons.</p>
+
+    <div class="tbl"><table>
+      <tr><th>File</th><th>What it is</th></tr>
+      <tr><td><code>index.html</code></td><td>The single HTML page React mounts into.</td></tr>
+      <tr><td><code>vite.config.js</code></td><td>Vite settings. Dev server on port 5173, and <code>/api</code> requests are proxied to the backend on 4000.</td></tr>
+      <tr><td><code>package.json</code></td><td>Frontend packages: react, react-dom, react-router-dom (plus vite).</td></tr>
+      <tr><td><code>src/main.jsx</code></td><td>Entry point. Renders <code>&lt;App/&gt;</code> into the page.</td></tr>
+      <tr><td><code>src/App.jsx</code></td><td>All routes. Public site (<code>/</code>, <code>/about</code>), logins (<code>/login</code>, <code>/staff</code>), and the app under <code>/app/...</code> with role checks.</td></tr>
+    </table></div>
+
+    <h3>public/ · static files</h3>
+    <div class="tbl"><table>
+      <tr><td><code>brand/</code></td><td>Owl mascot images (<code>owl</code>, <code>owl-board</code>, <code>owl-trio</code>).</td></tr>
+      <tr><td><code>img/</code></td><td>19 bundled campus/study photos, so nothing is loaded from the internet.</td></tr>
+      <tr><td><code>favicon.svg</code></td><td>Browser tab icon.</td></tr>
+    </table></div>
+
+    <h3>src/pages/ · one file per screen</h3>
+    <div class="tbl"><table>
+      <tr><th>Page</th><th>Who</th><th>Shows</th></tr>
+      <tr><td><code>Landing.jsx</code></td><td>Public</td><td>Home / marketing page.</td></tr>
+      <tr><td><code>About.jsx</code></td><td>Public</td><td>About the project and GLS University.</td></tr>
+      <tr><td><code>Login.jsx</code></td><td>Public</td><td>Student and staff sign-in, with one-tap demo accounts.</td></tr>
+      <tr><td><code>Dashboard.jsx</code></td><td>All</td><td>Home screen after login, different for each role.</td></tr>
+      <tr><td><code>Assistant.jsx</code></td><td>All</td><td>The chatbot: answers, citations, follow-up options, suggestions.</td></tr>
+      <tr><td><code>Timetable.jsx</code></td><td>All</td><td>Weekly timetable and calendar.</td></tr>
+      <tr><td><code>Attendance.jsx</code></td><td>All</td><td>Attendance per subject. Staff can mark it.</td></tr>
+      <tr><td><code>Results.jsx</code></td><td>All</td><td>Marks and results. Staff can publish them.</td></tr>
+      <tr><td><code>Assignments.jsx</code></td><td>All</td><td>Assignments: submit (student), create and grade (faculty).</td></tr>
+      <tr><td><code>Library.jsx</code></td><td>All</td><td>Documents/circulars. Staff can upload.</td></tr>
+      <tr><td><code>Notices.jsx</code></td><td>All</td><td>Announcements, including scheduled ones.</td></tr>
+      <tr><td><code>QuestionBanks.jsx</code></td><td>Faculty, Admin</td><td>Generate, review and publish question banks.</td></tr>
+      <tr><td><code>People.jsx</code></td><td>Admin</td><td>Manage users.</td></tr>
+      <tr><td><code>SubjectsAdmin.jsx</code></td><td>Admin</td><td>Manage subjects and assign faculty.</td></tr>
+    </table></div>
+
+    <h3>src/components/ · reusable UI pieces</h3>
+    <div class="tbl"><table>
+      <tr><td><code>ui.jsx</code></td><td>Basic building blocks: Button, Card, Badge, Field, Stat, Modal, Tabs, Table, Skeleton, EmptyState, Note.</td></tr>
+      <tr><td><code>Shell.jsx</code></td><td>The logged-in app frame: sidebar navigation (items depend on role) plus top bar.</td></tr>
+      <tr><td><code>SiteLayout.jsx</code>, <code>SiteHeader.jsx</code>, <code>SiteFooter.jsx</code></td><td>Frame for the public pages (header and footer).</td></tr>
+      <tr><td><code>Charts.jsx</code></td><td>Hand-made SVG charts. No chart library is used.</td></tr>
+      <tr><td><code>Icon.jsx</code></td><td>Hand-drawn SVG icon set. No icon package is used.</td></tr>
+      <tr><td><code>Logo.jsx</code></td><td>The owl logo and the <code>&lt;Mascot/&gt;</code> images.</td></tr>
+      <tr><td><code>Calendar.jsx</code></td><td>Month calendar for picking a day's schedule.</td></tr>
+      <tr><td><code>DocumentViewer.jsx</code></td><td>Opens a document, with its AI summary alongside.</td></tr>
+      <tr><td><code>FilePicker.jsx</code></td><td>Drag-and-drop upload box used by every upload screen.</td></tr>
+      <tr><td><code>SubjectRail.jsx</code></td><td>Horizontal scrolling row of subject cards.</td></tr>
+      <tr><td><code>ArcSteps.jsx</code>, <code>JourneyPath.jsx</code>, <code>PhotoFan.jsx</code></td><td>Decorative layouts for the landing and About pages.</td></tr>
+      <tr><td><code>Reveal.jsx</code></td><td>Scroll/count-up animations. They are switched off for users who prefer reduced motion.</td></tr>
+    </table></div>
+
+    <h3>src/lib/ · non-visual helpers</h3>
+    <div class="tbl"><table>
+      <tr><td><code>api.js</code></td><td><strong>Every network call goes through here.</strong> It adds the login token and handles errors.</td></tr>
+      <tr><td><code>auth.jsx</code></td><td>Stores who is logged in (React context, <code>useAuth()</code>).</td></tr>
+      <tr><td><code>useApi.js</code></td><td>Hook for loading data, tracking loading and error state, and refetching.</td></tr>
+      <tr><td><code>toast.jsx</code></td><td>Small pop-up success/error messages.</td></tr>
+      <tr><td><code>format.js</code></td><td>Formatting helpers: dates, file sizes, branch names, colour for attendance %.</td></tr>
+      <tr><td><code>site.js</code></td><td>Text content for the public pages, kept separate from layout.</td></tr>
+    </table></div>
+
+    <h3>src/styles/</h3>
+    <div class="tbl"><table>
+      <tr><td><code>theme.css</code></td><td><strong>Design tokens</strong>: every colour, spacing, radius and shadow. To change a colour, change it here and nowhere else.</td></tr>
+      <tr><td><code>app.css</code></td><td>All component and page styles, built on those tokens. Mobile-first.</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ============================================================ FLOWS -->
+  <section id="flows">
+    <div class="head"><span class="tag t-sky">flows</span><h2>How the pieces connect</h2></div>
+
+    <h3>A student asks a question</h3>
+    <ol class="flow">
+      <li><code>pages/Assistant.jsx</code> sends it through <code>lib/api.js</code> to <code>POST /api/chat/ask</code>.</li>
+      <li><code>routes/chat.js</code> checks the token and works out who is asking (<code>scopeOf</code>).</li>
+      <li><code>rag/answer.js</code>: if a detail is missing (e.g. semester), it asks a follow-up question instead of guessing.</li>
+      <li><code>rag/router.js</code> classifies the question as a <strong>record</strong> question or a <strong>document</strong> question.</li>
+      <li>Record questions go to <code>rag/structured.js</code>, which reads the database.<br>Document questions go to <code>rag/retrieve.js</code>, which runs a BM25 search via <code>rag/index.js</code>.</li>
+      <li>If confidence is too low, the reply is "not found in official documents".</li>
+      <li><code>rag/llm.js</code> writes the answer (extractive or Gemini) and attaches the citations.</li>
+    </ol>
+
+    <h3>Staff upload a document</h3>
+    <ol class="flow">
+      <li><code>pages/Library.jsx</code> sends the file to <code>POST /api/documents</code>.</li>
+      <li><code>multer</code> saves it to <code>server/data/uploads/</code>.</li>
+      <li><code>lib/parse.js</code> extracts the text, and <code>rag/chunk.js</code> splits it into passages that are stored in the database.</li>
+      <li>The search index rebuilds, so the document can be searched straight away.</li>
+      <li>If a Gemini key is set, <code>rag/enrich.js</code> summarises the document in the background.</li>
+    </ol>
+  </section>
+
+  <!-- ============================================================ VIVA -->
+  <section id="viva">
+    <div class="head"><span class="tag t-peach">viva</span><h2>Quick answers</h2></div>
+    <div class="qa">
+      <div><div class="q">What is RAG?</div><div class="a">Retrieval-Augmented Generation. The system first finds relevant passages in official documents, then answers only from them, with a citation.</div></div>
+      <div><div class="q">Which search algorithm do you use?</div><div class="a">BM25, written in plain JavaScript (<code>server/src/rag/index.js</code>). It needs no API key or internet.</div></div>
+      <div><div class="q">How does it avoid wrong answers?</div><div class="a">A confidence gate in <code>retrieve.js</code> checks two things: the BM25 score, and how many of the question's important words were found. If either is too low, it says "not found" instead of guessing.</div></div>
+      <div><div class="q">How does it tell "my attendance" from "attendance policy"?</div><div class="a"><code>router.js</code> looks for personal words (my, I, me) versus policy words (rule, policy, minimum). The first is a record lookup, the second is a document search.</div></div>
+      <div><div class="q">Where is the data stored?</div><div class="a">MongoDB. If MongoDB is not available, the same data is read from JSON files in <code>server/data/</code>. Only <code>db.js</code> knows which one is in use.</div></div>
+      <div><div class="q">Does it need an AI key?</div><div class="a">No. By default it works offline and quotes sentences from documents. A Gemini key is optional and makes answers more fluent. Without the key it falls back to offline mode and reports that it did.</div></div>
+      <div><div class="q">How is security handled?</div><div class="a">bcrypt-hashed passwords, JWT login tokens, and role checks on the server (<code>requireRole</code>). A student can only see their own records, because the ID comes from the token, not from the request.</div></div>
+      <div><div class="q">What are the three roles?</div><div class="a">Student (views own data, asks questions), Faculty (marks attendance, grades, uploads, makes question banks), Admin (everything, plus users and subjects).</div></div>
+      <div><div class="q">How do frontend and backend talk?</div><div class="a">Through a REST API under <code>/api</code>. All calls go through <code>web/src/lib/api.js</code>. In development, Vite proxies <code>/api</code> to port 4000.</div></div>
+      <div><div class="q">What file types can be uploaded?</div><div class="a">PDF, Word, Excel/CSV, PowerPoint, text and images, up to 25 MB (<code>lib/parse.js</code>).</div></div>
+      <div><div class="q">Why no UI library or chart library?</div><div class="a">The design is small and custom, so hand-written CSS and SVG match it exactly and keep the app light.</div></div>
+      <div><div class="q">How did you test it?</div><div class="a"><code>npm run eval</code> runs 26 retrieval, routing and refusal cases. <code>npm run smoke</code> runs end-to-end API checks for all three roles.</div></div>
+      <div><div class="q">Where does the demo data come from?</div><div class="a"><code>server/src/seed/seed.js</code> generates realistic sample data. Real college records are private, so none were used.</div></div>
+      <div><div class="q">How do I run it?</div><div class="a"><code>npm install</code>, then <code>npm run dev</code>. The frontend is at localhost:5173 and the API at localhost:4000. Demo password: <code>demo1234</code>.</div></div>
+    </div>
+  </section>
+
+  <footer>UniNest · docs/FOLDER_GUIDE.html</footer>
+</div>
+</body>
+</html>
