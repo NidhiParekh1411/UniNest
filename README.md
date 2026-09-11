@@ -1,5 +1,5 @@
-# College RAG Assistant
-
+# UniNest
+  
 An AI knowledge assistant for a college: a retrieval-grounded chatbot plus the
 structured records — timetables, attendance, results, assignments — that student
 questions actually depend on. Three roles, scoped access, and answers that always
