@@ -2,11 +2,12 @@ const BASE = 'http://localhost:4000/api';
 let pass = 0, fail = 0;
 const results = [];
 
-async function req(path, { method = 'GET', token, body } = {}) {
+async function req(path, { method = 'GET', token, body, form } = {}) {
   const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
+  // fetch sets the multipart boundary itself; setting Content-Type here breaks it.
   if (body) headers['Content-Type'] = 'application/json';
-  const res = await fetch(BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const res = await fetch(BASE + path, { method, headers, body: form ?? (body ? JSON.stringify(body) : undefined) });
   let json = null; try { json = await res.json(); } catch {}
   return { status: res.status, json };
 }
@@ -76,7 +77,10 @@ const asks = [
   [S, 'what is my attendance', 'structured'],
   [S, 'what is the attendance policy', 'document'],
   [S, 'what is the wifi password', 'abstain'],
-  [F, 'what is my timetable', 'clarify'],
+  // Possessive: answered from the subjects they teach, not asked back about.
+  [F, 'what is my timetable', 'structured'],
+  // Impersonal: the cohort really is unknown, so asking is right.
+  [F, 'what is the timetable', 'clarify'],
   [S, 'who teaches Database Management Systems', 'structured'],
 ];
 for (const [t, q, kind] of asks) {
@@ -87,7 +91,7 @@ for (const [t, q, kind] of asks) {
 const cited = await req('/chat/ask', { token: S, method: 'POST', body: { question: 'what are the library timings' } });
 check('document answer carries citations', cited.json.citations.length > 0);
 // follow-up override resolves the clarify
-const resolved = await req('/chat/ask', { token: F, method: 'POST', body: { question: 'what is my timetable', overrides: { semester: 5, branch: 'CE' } } });
+const resolved = await req('/chat/ask', { token: F, method: 'POST', body: { question: 'what is the timetable', overrides: { semester: 5, branch: 'CE' } } });
 check('follow-up override resolves clarification', resolved.json.kind === 'structured' && resolved.json.data?.type === 'timetable', `got ${resolved.json.kind}`);
 // conversation persisted
 const convo = await req('/chat/conversations', { token: S });
@@ -109,16 +113,32 @@ check('faculty sees own assignments with counts', facAssign.json.assignments.len
 const subj = (await req('/academics/subjects?mine=true', { token: F })).json.subjects[0];
 const created = await req('/assignments', { token: F, method: 'POST', body: { subjectId: subj.id, title: 'Smoke test assignment', description: 'x', dueDate: new Date(Date.now()+86400000).toISOString(), maxMarks: 25 } });
 check('faculty creates assignment', created.status === 201 && created.json.assignment.title === 'Smoke test assignment');
-const target = facAssign.json.assignments.find(a => a.submissionCount > a.gradedCount) ?? facAssign.json.assignments[0];
-const subs = await req(`/assignments/${target.id}/submissions`, { token: F });
+// A self-contained grading round. This used to reach into the seed for "an
+// assignment with an ungraded submission", which meant the first run graded the
+// last one and every run after it failed with "none in seed". The test now
+// creates the assignment, submits to it and grades that, so it is idempotent.
+const stuSubject = (await req('/academics/subjects', { token: S })).json.subjects[0];
+const gradeTarget = await req('/assignments', {
+  token: A, method: 'POST',
+  body: { subjectId: stuSubject.id, title: 'Smoke grading target', description: 'x', dueDate: new Date(Date.now() + 86400000).toISOString(), maxMarks: 20 },
+});
+check('admin sets an assignment for the student cohort', gradeTarget.status === 201, JSON.stringify(gradeTarget.json).slice(0, 120));
+
+const form = new FormData();
+form.append('file', new Blob(['smoke submission'], { type: 'text/plain' }), 'smoke.txt');
+const submitted = await req(`/assignments/${gradeTarget.json.assignment.id}/submit`, { token: S, method: 'POST', form });
+check('student submits work', submitted.status === 201, JSON.stringify(submitted.json).slice(0, 120));
+
+const subs = await req(`/assignments/${gradeTarget.json.assignment.id}/submissions`, { token: A });
 check('faculty reads submissions', subs.status === 200);
 const ungraded = subs.json.submissions.find(s => s.status !== 'graded');
+check('the new submission is waiting to be graded', Boolean(ungraded));
 if (ungraded) {
-  const graded = await req(`/assignments/submissions/${ungraded.id}/grade`, { token: F, method: 'POST', body: { marks: 5, feedback: 'smoke' } });
+  const graded = await req(`/assignments/submissions/${ungraded.id}/grade`, { token: A, method: 'POST', body: { marks: 5, feedback: 'smoke' } });
   check('faculty grades submission', graded.status === 200 && graded.json.submission.status === 'graded');
-  const overMax = await req(`/assignments/submissions/${ungraded.id}/grade`, { token: F, method: 'POST', body: { marks: 99999 } });
+  const overMax = await req(`/assignments/submissions/${ungraded.id}/grade`, { token: A, method: 'POST', body: { marks: 99999 } });
   check('marks above maximum rejected', overMax.status === 400);
-} else { check('found ungraded submission to grade', false, '(none in seed)'); }
+}
 
 // --- announcements + scheduling
 const future = new Date(Date.now() + 3 * 86400000).toISOString();
