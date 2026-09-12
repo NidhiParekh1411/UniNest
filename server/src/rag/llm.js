@@ -246,6 +246,58 @@ export async function compose(question, hits, history = []) {
   return extractive(question, hits);
 }
 
+// ---------------------------------------------------------------- tool choice
+
+const TOOL_SYSTEM = `You translate a question about a college's records into one function call.
+
+Call a function only when the question asks for record data — attendance figures,
+marks, rankings, or a list of students matching a condition. Answer with plain
+text instead when the question is about a policy, a rule, a procedure, or
+anything that would be written in a document rather than stored in a table.
+
+Only the functions offered to you exist. If none of them fits, do not call one.`;
+
+function partsFunctionCall(json) {
+  const parts = json?.candidates?.[0]?.content?.parts ?? [];
+  const call = parts.find((p) => p.functionCall)?.functionCall;
+  return call ? { name: call.name, args: call.args ?? {} } : null;
+}
+
+// Picks which record query answers a question, and with what arguments. It does
+// NOT run anything: the caller executes the chosen tool against the database,
+// which is what keeps rule 4 enforceable — the model influences the query, never
+// the identity it runs as.
+//
+// Returns { call: null } for every failure mode, because none of them should
+// break the answer path: no key, exhausted quota, a network fault, or the model
+// deciding this is a document question after all. `degraded` distinguishes "the
+// model declined" from "the model never got asked".
+export async function chooseTool(question, declarations, history = []) {
+  if (!declarations.length) return { call: null, degraded: false };
+  if (!process.env.GEMINI_API_KEY) {
+    return { call: null, degraded: true, reason: 'No GEMINI_API_KEY — record questions use pattern matching only.' };
+  }
+
+  const priorTurns = history.slice(-4).map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`).join('\n');
+  const prompt = [priorTurns ? `Conversation so far:\n${priorTurns}\n` : '', `Question: ${question}`].filter(Boolean).join('\n');
+
+  try {
+    const json = await callGemini({
+      systemInstruction: { parts: [{ text: TOOL_SYSTEM }] },
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      tools: [{ functionDeclarations: declarations }],
+      // AUTO, not ANY: the model must be free to decline, or every policy
+      // question that slipped through the pre-filter becomes a bogus lookup.
+      toolConfig: { functionCallingConfig: { mode: 'AUTO' } },
+      generationConfig: { temperature: 0 },
+    });
+    return { call: partsFunctionCall(json), degraded: false };
+  } catch (err) {
+    console.warn('[llm] tool selection unavailable:', err.message);
+    return { call: null, degraded: true, reason: err.message };
+  }
+}
+
 // Reads a *file* with the model — the OCR and transcription path.
 //
 // This is how a scanned PDF or a photograph of a notice becomes text. The local
