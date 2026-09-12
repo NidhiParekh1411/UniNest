@@ -22,7 +22,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
-app.use(cors());
+
+// The deployed app is same-origin — Express serves web/dist below — so CORS is
+// not needed in production and an open policy there just invites other sites to
+// call the API. Development keeps it open so a split dev setup still works.
+const CORS_ORIGIN = process.env.CORS_ORIGIN?.trim();
+if (CORS_ORIGIN) app.use(cors({ origin: CORS_ORIGIN.split(',').map((s) => s.trim()) }));
+else if (process.env.NODE_ENV !== 'production') app.use(cors());
+
 app.use(express.json({ limit: '2mb' }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, at: new Date().toISOString() }));

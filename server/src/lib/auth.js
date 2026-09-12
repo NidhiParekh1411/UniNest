@@ -10,6 +10,16 @@ import db from './db.js';
 const SECRET = process.env.JWT_SECRET || 'dev-only-secret-change-me';
 const TTL = '12h';
 
+// That fallback is published in this repository, so signing real sessions with
+// it would let anyone who has read the source mint themselves an admin token.
+// Refusing to boot is noisy; deploying quietly insecure is worse.
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error(
+    'JWT_SECRET must be set when NODE_ENV=production — generate one with '
+    + '`openssl rand -base64 32`. See docs/DEPLOYMENT.html.',
+  );
+}
+
 export const ROLES = { STUDENT: 'student', FACULTY: 'faculty', ADMIN: 'admin' };
 
 export const hash = (plain) => bcrypt.hashSync(plain, 10);
