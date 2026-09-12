@@ -61,7 +61,8 @@ web/
 
 ## Branches
 
-`main` and `v1` are frozen at the pre-UniNest state. Work happens on **`v2`**.
+`v1` is frozen at the pre-UniNest state. `v2` has been merged and is now behind
+`main`, which carries the current work — branch from **`main`**.
 
 ## House rules
 
