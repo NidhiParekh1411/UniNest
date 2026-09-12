@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
@@ -38,6 +39,20 @@ app.use('/api/overview', overviewRoutes);
 
 app.use('/api', (_req, res) => res.status(404).json({ error: 'No such endpoint' }));
 
+// In production the API also serves the built frontend, so the whole app is one
+// origin: web/src/lib/api.js fetches "/api/…" relative, exactly as it does behind
+// the Vite dev proxy, and nothing in web/ needs to know a base URL.
+//
+// web/dist is gitignored and only exists after `npm run build`, so in normal
+// development this block does not activate and the Vite proxy keeps serving.
+const CLIENT_DIR = path.resolve(__dirname, '../../web/dist');
+if (fs.existsSync(CLIENT_DIR)) {
+  app.use(express.static(CLIENT_DIR));
+  // Anything the API did not claim is a client route — hand it index.html and
+  // let React Router resolve it, so a deep link or a refresh does not 404.
+  app.get('*', (_req, res) => res.sendFile(path.join(CLIENT_DIR, 'index.html')));
+}
+
 // Errors are returned as a sentence a user can act on, never a stack trace.
 app.use((err, _req, res, _next) => {
   if (err instanceof multer.MulterError) {
@@ -74,6 +89,9 @@ try {
 const server = app.listen(PORT, () => {
   const provider = process.env.GEMINI_API_KEY ? 'Gemini' : 'offline extractive';
   console.log(`API listening on http://localhost:${PORT}  ·  answer engine: ${provider}  ·  store: ${driverLabel()}`);
+  if (fs.existsSync(CLIENT_DIR)) {
+    console.log('Serving the built frontend from web/dist — the app is on that same port.');
+  }
   if (driverName() === 'file') {
     console.log('Running on local files — no database needed. Sign in with the one-tap demo accounts.');
   }
