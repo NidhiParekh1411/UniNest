@@ -361,7 +361,10 @@ export function declarationsFor(scope) {
 // Returns null when the question is not plainly one of these shapes, which is
 // the model's cue to try. Arguments only — whose records come back is still
 // decided by runTool() against the token.
-const PERSONAL = /\b(my|mine|i|me|myself)\b/i;
+// Possessive only. A bare "I" turns up in population questions a professor asks
+// ("can I see the students below 75%"), and reading that as personal would hand
+// them their own empty record instead of the list.
+const PERSONAL = /\b(my|mine|our|myself)\b|\b(am|did|have|was|do) i\b/i;
 const BELOW = /\b(?:below|under|less than|fewer than|lower than)\s*(\d{1,3})\s*(?:%|percent)?/i;
 const ABOVE = /\b(?:above|over|more than|greater than|at least)\s*(\d{1,3})\s*(?:%|percent)?/i;
 const RANKED = /\b(top|bottom|best|worst|highest|lowest)\s*(\d{1,2})?\b/i;

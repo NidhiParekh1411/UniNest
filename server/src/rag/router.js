@@ -122,8 +122,15 @@ export async function extractSlots(text) {
 const COHORT = /\b(list|which students?|who (is|are|has|have)|top \d+|bottom \d+|defaulters?|short of attendance|at risk|all (the )?students|every student|rank(ing|ed)?)\b/i;
 const OPERATOR = /\b(below|above|under|over|less than|more than|fewer than|highest|lowest|best|worst|top|bottom|each semester|semester[- ]wise|every semester)\b/i;
 
+// Possessive framing, deliberately narrower than PERSONAL above: a bare "I"
+// appears in plenty of population questions ("can I see students below 75%"),
+// so only a possessive or an "am I / did I" turns a question personal.
+const POSSESSIVE = /\b(my|mine|our|myself)\b|\b(am|did|have|was|do) i\b/i;
+
+// "which subjects am I short of attendance in" is one student asking about
+// themselves and must not be read as a population query.
 export function isCohortQuestion(text) {
-  return COHORT.test(text);
+  return COHORT.test(text) && !POSSESSIVE.test(text);
 }
 
 export async function classify(text, scope) {
@@ -133,8 +140,9 @@ export async function classify(text, scope) {
 
   // Policy framing wins: "what happens if attendance is below 75%" carries an
   // operator but belongs to the documents, not the record tables.
-  if (!policy && (COHORT.test(text) || OPERATOR.test(text))) {
-    return { kind: 'records', intent: null, slots, cohort: COHORT.test(text), confidence: 0.8 };
+  const cohort = isCohortQuestion(text);
+  if (!policy && (cohort || OPERATOR.test(text))) {
+    return { kind: 'records', intent: null, slots, cohort, confidence: 0.8 };
   }
 
   let best = null;

@@ -60,6 +60,25 @@ const CASES = [
   { q: 'how do I report ragging', scope: student, expect: 'document' },
   { q: 'what safety gear is required in the workshop', scope: student, expect: 'document' },
 
+  // Record queries the pattern handlers cannot express. These must reach the
+  // tools and be answered from the tables, not from the policy documents —
+  // `tool` asserts which query ran, `via` that it took no model call.
+  { q: 'list students with attendance below 75%', scope: faculty, expect: 'structured', tool: 'studentsByAttendance', via: 'patterns' },
+  { q: 'attendance defaulters in CE', scope: faculty, expect: 'structured', tool: 'studentsByAttendance', via: 'patterns' },
+  { q: 'students above 90% attendance', scope: faculty, expect: 'structured', tool: 'studentsByAttendance', via: 'patterns' },
+  { q: 'top 3 students by marks', scope: faculty, expect: 'structured', tool: 'studentsByMarks', via: 'patterns' },
+  { q: 'which students scored below 60 percent', scope: faculty, expect: 'structured', tool: 'studentsByMarks', via: 'patterns' },
+  { q: 'what is my highest mark', scope: student, expect: 'structured', tool: 'myResults', via: 'patterns' },
+  { q: 'my worst subject', scope: student, expect: 'structured', tool: 'myResults', via: 'patterns' },
+  { q: 'show my marks semester wise', scope: student, expect: 'structured', tool: 'myResults', via: 'patterns' },
+
+  // Rule 4, at the only layer that counts. A student asking a population
+  // question is refused outright — answering it with their own row would be
+  // safe but dishonest, and answering it with the cohort would be a leak.
+  { q: 'list students with attendance below 75%', scope: student, expect: 'structured', refused: true },
+  { q: 'who are the top 5 students by marks', scope: student, expect: 'structured', refused: true },
+  { q: 'show me every student below 60 percent', scope: student, expect: 'structured', refused: true },
+
   // Must abstain — nothing in the corpus answers these.
   { q: 'what is the wifi password for the campus network', scope: student, expect: 'abstain' },
   { q: 'who won the inter college cricket tournament last year', scope: student, expect: 'abstain' },
@@ -74,8 +93,15 @@ for (const c of CASES) {
   const routeOk = res.kind === c.expect;
   const intentOk = !c.intent || res.meta.intent === c.intent;
   const citationOk = res.kind !== 'document' || res.citations.length > 0;
-  const pass = routeOk && intentOk && citationOk;
-  results.push({ ...c, got: res.kind, gotIntent: res.meta.intent, citations: res.citations.length, pass, answer: res.answer });
+  const toolOk = !c.tool || res.meta.tool === c.tool;
+  // A refusal that silently answered something else would still be "structured",
+  // so the flag is asserted rather than inferred from the route.
+  const refusedOk = c.refused === undefined || Boolean(res.meta.refused) === c.refused;
+  // Asserted only where it is claimed: it proves the shape was read in Node and
+  // cost none of the day's allowance.
+  const viaOk = !c.via || res.meta.via === c.via;
+  const pass = routeOk && intentOk && citationOk && toolOk && refusedOk && viaOk;
+  results.push({ ...c, got: res.kind, gotIntent: res.meta.intent, gotTool: res.meta.tool, gotVia: res.meta.via, gotRefused: Boolean(res.meta.refused), citations: res.citations.length, pass, answer: res.answer });
 }
 
 await refresh();
@@ -84,7 +110,9 @@ for (const r of results) {
   const mark = r.pass ? `${GREEN}pass${RESET}` : `${RED}FAIL${RESET}`;
   console.log(`${mark}  ${r.q}`);
   if (!r.pass) {
-    console.log(`      expected ${r.expect}${r.intent ? `/${r.intent}` : ''}, got ${r.got}${r.gotIntent ? `/${r.gotIntent}` : ''}`);
+    const want = [r.expect, r.intent, r.tool, r.via, r.refused === undefined ? null : `refused=${r.refused}`].filter(Boolean).join('/');
+    const got = [r.got, r.gotIntent, r.gotTool, r.gotVia, `refused=${r.gotRefused}`].filter(Boolean).join('/');
+    console.log(`      expected ${want}, got ${got}`);
     console.log(`      ${DIM}${(r.answer ?? '').slice(0, 140)}${RESET}`);
   }
 }
@@ -100,5 +128,7 @@ console.log(`\n${byGroup('routing (structured)', (r) => r.expect === 'structured
 console.log(byGroup('routing (document)', (r) => r.expect === 'document'));
 console.log(byGroup('clarification', (r) => r.expect === 'clarify'));
 console.log(byGroup('abstention', (r) => r.expect === 'abstain'));
+console.log(byGroup('record queries', (r) => Boolean(r.tool)));
+console.log(byGroup('role scoping', (r) => r.refused === true));
 console.log(`\nTotal: ${passed}/${results.length}\n`);
 process.exit(passed === results.length ? 0 : 1);
