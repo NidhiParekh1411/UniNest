@@ -34,7 +34,11 @@ function DataBlock({ data }) {
     }, {});
     return (
       <div className="chat-data">
-        <div className="chat-data-head"><span className="eyebrow">{data.branch} · Semester {data.semester}{data.day ? ` · ${data.day}` : ''}</span></div>
+        <div className="chat-data-head">
+          <span className="eyebrow">
+            {data.self ? 'Your teaching week' : `${data.branch} · Semester ${data.semester}`}{data.day ? ` · ${data.day}` : ''}
+          </span>
+        </div>
         <div className="slots" style={{ padding: 'var(--s2) var(--s4) var(--s3)' }}>
           {Object.entries(byDay).map(([day, rows]) => (
             <div key={day} style={{ marginTop: 'var(--s3)' }}>
@@ -47,7 +51,7 @@ function DataBlock({ data }) {
                   </span>
                   <span className="slot-body">
                     <span className="slot-title">{r.subject}</span>
-                    <span className="slot-meta">{r.room} · {r.faculty}</span>
+                    <span className="slot-meta">{r.room} · {r.cohort ?? r.faculty}</span>
                   </span>
                   {r.type === 'lab' && <Badge tone="lavender">Lab</Badge>}
                 </div>
@@ -441,6 +445,8 @@ export default function Assistant() {
   const [engine, setEngine] = useState(null);
   const scrollRef = useRef(null);
   const lastQuestion = useRef(null);
+  // Accumulated across one question's follow-ups, reset by the next question.
+  const pendingOverrides = useRef({});
 
   useEffect(() => {
     api.suggest('').then((res) => setStarters(res.groups?.[0]?.items ?? [])).catch(() => {});
@@ -454,6 +460,9 @@ export default function Assistant() {
 
   const send = useCallback(async (question, overrides) => {
     lastQuestion.current = question;
+    // A new question starts a new set of answers. Anything carried over from the
+    // previous question's follow-ups would silently narrow this one.
+    pendingOverrides.current = { ...(overrides ?? {}) };
     setMessages((m) => [...m, { role: 'user', text: question, id: Math.random().toString(36).slice(2) }]);
     setBusy(true);
     try {
@@ -480,10 +489,16 @@ export default function Assistant() {
 
   // A follow-up answer re-asks the original question with the missing slot
   // filled in, rather than sending the bare option as a new question.
+  //
+  // Every answer so far is sent, not just the newest one. Sending one field at a
+  // time meant a question needing two of them could never be satisfied: filling
+  // the semester dropped the branch, filling the branch dropped the semester,
+  // and the assistant asked the same pair forever.
   const onFollowUp = useCallback((field, value, label) => {
     setMessages((m) => [...m, { role: 'user', text: label, id: Math.random().toString(36).slice(2) }]);
     setBusy(true);
-    api.ask({ question: lastQuestion.current, conversationId, overrides: { [field]: value } })
+    pendingOverrides.current = { ...pendingOverrides.current, [field]: value };
+    api.ask({ question: lastQuestion.current, conversationId, overrides: { ...pendingOverrides.current } })
       .then((res) => {
         setConversationId(res.conversationId);
         setMessages((m) => [...m, {

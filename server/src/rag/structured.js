@@ -22,9 +22,21 @@ function resolveStudent(scope) {
 export const handlers = {
   async timetable(slots, scope) {
     const { semester, branch, day } = slots;
-    const rows = await db.timetable.find({ semester, branch });
+
+    // "What is my schedule" from a faculty member is about the sessions *they*
+    // teach, which the subject mapping already answers. Asking them which
+    // branch and semester they meant is asking them to repeat themselves, and
+    // it used to loop: the follow-up filled one slot and dropped the other.
+    const self = Boolean(slots.self) && (scope.subjectIds?.length ?? 0) > 0;
+    const mine = self ? new Set(scope.subjectIds) : null;
+
+    const rows = self
+      ? (await db.timetable.all()).filter((r) => mine.has(r.subjectId))
+      : await db.timetable.find({ semester, branch });
+
+    const where = self ? 'your subjects' : `${branch} semester ${semester}`;
     if (!rows.length) {
-      return { answer: `No timetable has been published yet for ${branch} semester ${semester}.`, citations: [] };
+      return { answer: `No timetable has been published yet for ${where}.`, citations: [] };
     }
     let dayFilter = null;
     if (day) {
@@ -35,7 +47,7 @@ export const handlers = {
     }
     const scoped = dayFilter ? rows.filter((r) => r.day === dayFilter) : rows;
     if (dayFilter && !scoped.length) {
-      return { answer: `There are no classes scheduled on ${dayFilter} for ${branch} semester ${semester}.`, citations: [] };
+      return { answer: `There are no classes scheduled on ${dayFilter} for ${where}.`, citations: [] };
     }
     const subjects = await lookup('subjects', scoped.map((r) => r.subjectId));
     const faculty = await lookup('users', [...subjects.values()].map((s) => s.facultyId));
@@ -44,12 +56,18 @@ export const handlers = {
       subject: subjectName(subjects, r.subjectId),
       code: subjects.get(r.subjectId)?.code ?? '',
       faculty: facultyName(faculty, subjects.get(r.subjectId)?.facultyId),
+      // A teaching week spans cohorts, so each row has to say which one it is;
+      // for a single-cohort timetable the branch and semester are in the header.
+      cohort: self ? `${r.branch} sem ${r.semester}` : null,
     })).sort((a, b) => DAYS.indexOf(a.day) - DAYS.indexOf(b.day) || a.startTime.localeCompare(b.startTime));
 
+    const cohorts = self ? new Set(enriched.map((e) => e.cohort)).size : 0;
     const answer = dayFilter
       ? `You have ${enriched.length} ${enriched.length === 1 ? 'class' : 'classes'} on ${dayFilter}, starting with ${enriched[0].subject} at ${enriched[0].startTime}.`
-      : `Here is the full week for ${branch} semester ${semester} — ${enriched.length} scheduled sessions across ${new Set(enriched.map((e) => e.day)).size} days.`;
-    return { answer, data: { type: 'timetable', rows: enriched, branch, semester, day: dayFilter }, citations: [] };
+      : self
+        ? `You teach ${enriched.length} sessions a week across ${cohorts} ${cohorts === 1 ? 'cohort' : 'cohorts'}, on ${new Set(enriched.map((e) => e.day)).size} days.`
+        : `Here is the full week for ${branch} semester ${semester} — ${enriched.length} scheduled sessions across ${new Set(enriched.map((e) => e.day)).size} days.`;
+    return { answer, data: { type: 'timetable', rows: enriched, branch, semester, day: dayFilter, self }, citations: [] };
   },
 
   async attendance(slots, scope) {

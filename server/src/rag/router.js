@@ -174,7 +174,19 @@ export async function classify(text, scope) {
     filled.semester ??= scope.semester;
     filled.branch ??= scope.branch;
   }
-  const missing = best.slots.filter((s) => {
+
+  // A faculty member asking possessively is asking about the subjects they
+  // teach, and the mapping already says which those are. Treating it as an
+  // underspecified cohort question asked them which branch and semester they
+  // meant — a question they had just answered, and one they could not get past,
+  // because each follow-up filled one slot while dropping the other.
+  const self = POSSESSIVE.test(text)
+    && scope.role !== 'student'
+    && (scope.subjectIds?.length ?? 0) > 0
+    && !slots.semester && !slots.branch;
+  if (self) filled.self = true;
+
+  const missing = self ? [] : best.slots.filter((s) => {
     if (s === 'semester') return filled.semester == null;
     if (s === 'branch') return filled.branch == null;
     return false;   // subject/day/examType are optional refinements, not blockers

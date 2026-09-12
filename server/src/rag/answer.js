@@ -61,6 +61,10 @@ export async function ask({ question, scope, history = [], overrides = {} }) {
   const route = await classify(text, scope);
   const slots = { ...route.slots, ...overrides };
 
+  // Naming a cohort outranks the self-scoped reading: a faculty member who
+  // picked a branch or semester wants that cohort, not their own teaching week.
+  if (overrides.semester != null || overrides.branch != null) delete slots.self;
+
   // A follow-up answer ("Semester 5") arrives with overrides that fill the gap,
   // so the same question re-routes cleanly instead of asking twice.
   const stillMissing = (route.missing ?? []).filter((m) => slots[m] == null);

@@ -38,7 +38,12 @@ const CASES = [
 
   { q: 'what is my timetable today', scope: student, expect: 'structured', intent: 'timetable' },
   { q: 'show my full week timetable', scope: student, expect: 'structured', intent: 'timetable' },
-  { q: 'what is my timetable', scope: faculty, expect: 'clarify' },
+  // Possessive: the subject mapping already says which sessions are theirs, so
+  // asking which cohort they meant was asking a question they had answered.
+  { q: 'what is my timetable', scope: faculty, expect: 'structured', intent: 'timetable' },
+  { q: 'what is my schedule', scope: faculty, expect: 'structured', intent: 'timetable' },
+  // Impersonal, so the cohort is genuinely unknown and worth asking about.
+  { q: 'what is the timetable', scope: faculty, expect: 'clarify' },
 
   { q: 'what were my midsem marks', scope: student, expect: 'structured', intent: 'results' },
   { q: 'how is CGPA calculated', scope: student, expect: 'document' },
