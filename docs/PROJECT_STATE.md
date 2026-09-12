@@ -1,6 +1,6 @@
 # Project State — read this first
 
-**Last updated:** 12 September 2026 · **Phase 1 complete · runs with no database · deployable · the assistant answers from the record tables**
+**Last updated:** 12 September 2026 · **Phase 1 complete · runs with no database · deployable · the assistant reads the record tables and can act on them**
 
 If you are a new session picking this up: read this file, then `CLAUDE.md`, then
 `docs/REQUIREMENTS.md`. Everything below reflects the code as it actually is, not
@@ -39,7 +39,7 @@ accounts, so no credentials need typing.
 | `npm run dev` | Runs API and web together with prefixed output |
 | `npm run seed` | Wipes and regenerates every collection |
 | `npm run eval` | 37-case retrieval/routing/abstention/record-query harness |
-| `npm run smoke` | 52-assertion end-to-end API test across all three roles (needs `npm run dev` running) |
+| `npm run smoke` | 56-assertion end-to-end API test across all three roles (needs `npm run dev` running) |
 | `npm run build` | Production build of the frontend |
 
 ### Demo accounts — password `demo1234` for all
@@ -99,6 +99,7 @@ passages · 45 assignments · 143 submissions · 10 announcements (3 scheduled).
 | MongoDB | **Done** — every collection, indexed | `lib/db.js` |
 | Runs without a database | **Done 5 Sep 2026** — file-backed driver behind the same `db` surface, chosen automatically when Mongo is unreachable; guards against clobbering files another process changed | `lib/db.js` |
 | Record queries in chat | **Done 12 Sep 2026** — attendance and marks answered from the tables: a student's own totals, best/worst subject and per-semester breakdown; cohort filters and rankings for faculty and admin. Node reads the common shapes, Gemini reads the rest, and a student's population question is refused | `rag/records.js`, `rag/router.js`, `rag/answer.js` |
+| Actions from the chat | **Done 12 Sep 2026** — five: set an assignment, submit work, grade a waiting list, post or schedule a notice, draft a question bank. The assistant proposes a pre-filled form; the user confirms; the existing endpoint commits, so role checks are not duplicated | `rag/actions.js`, `pages/Assistant.jsx` |
 | Deployable to a host | **Done 12 Sep 2026** — Express serves `web/dist` so the app is one origin; `render.yaml` imports with no dashboard configuration; production refuses to boot without `JWT_SECRET` | `server/src/index.js`, `render.yaml`, `docs/DEPLOYMENT.html` |
 
 ---
@@ -252,7 +253,7 @@ bottom by marks are different lists.
 
 `npm run eval` is now **37/37** (was 26 cases), including three that assert a
 student's cohort question is refused and eight that assert the common shapes
-resolve with `via: 'patterns'` — i.e. no model call. `npm run smoke` is 52/52.
+resolve with `via: 'patterns'` — i.e. no model call. `npm run smoke` is 56/56.
 
 **Deployment.** `server/src/index.js` serves `web/dist` when it exists, so the
 deployed app is one origin and `web/src/lib/api.js` keeps its relative URLs
@@ -264,6 +265,33 @@ with zero users and every login fails as though the password were wrong.
 Production now refuses to boot without `JWT_SECRET` (the fallback in
 `lib/auth.js` is published in this repo) and drops the open CORS policy.
 Full walkthrough in `docs/DEPLOYMENT.html`.
+
+**Actions from the chat.** `rag/actions.js` adds five things the assistant can
+*do*. The rule that shapes the file: **chat proposes, it never commits.** Each
+handler returns a description of a form — fields, the options that asker is
+allowed, and which endpoint will receive it — and writes nothing. The user
+confirms in the chat and the frontend calls the same route the Assignments or
+Notices screen calls. Creating an assignment or publishing a notice to every
+student off a *guessed* intent would be a mutation nobody confirmed, and routing
+it through the existing endpoints keeps role enforcement in one place instead of
+making chat a second way in.
+
+Detection is a verb plus its object, so "what assignments are pending" still
+answers rather than opening a create form. A due date or publish time is read out
+of the question and pre-filled for the user to correct — `parseWhen()` handles
+"next friday", "tomorrow", "in 3 days" and "on 20 September". A notice only
+becomes *scheduled* if a time was actually mentioned; defaulting to a future time
+would silently delay a notice meant to go out immediately.
+
+**Two fixes found on the way.** A faculty member asking "what is my schedule" was
+caught in a loop: the router asked for a semester, then a branch, then the
+semester again, forever — because `Assistant.jsx` sent only the newest follow-up
+answer and dropped the previous one. Both halves are fixed: the frontend now
+accumulates answers across a question's follow-ups, and a possessive question is
+answered from the subjects the asker teaches rather than asked back about at all.
+Separately, `npm run smoke` could only ever pass once against a given file store —
+it reached into the seed for an ungraded submission and then graded it. It now
+creates its own, and passes twice in a row.
 
 **Known gap:** uploaded binaries still live on the container filesystem
 (`UPLOAD_DIR`, now overridable), so on a free instance they vanish on redeploy.
