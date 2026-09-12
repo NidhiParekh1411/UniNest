@@ -12,6 +12,7 @@
   },
   "scripts": {
     "dev": "node scripts/dev.js",
+    "start": "npm start -w server",
     "seed": "npm run seed -w server",
     "server": "npm run dev -w server",
     "web": "npm run dev -w web",

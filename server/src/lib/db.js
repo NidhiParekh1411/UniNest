@@ -19,7 +19,12 @@ import { MongoClient } from 'mongodb';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const DATA_DIR = path.resolve(__dirname, '../../data');
-export const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
+// UPLOAD_DIR is overridable because on a hosted container the code directory is
+// wiped on every redeploy. Pointing this at a mounted disk is then a settings
+// change rather than a code change. Unset, it behaves exactly as it always has.
+export const UPLOAD_DIR = process.env.UPLOAD_DIR
+  ? path.resolve(process.env.UPLOAD_DIR)
+  : path.join(DATA_DIR, 'uploads');
 
 // Uploaded binaries stay on disk; Mongo stores the metadata row that points at
 // them. Keeping files out of the database is what lets a 25 MB PDF upload stay

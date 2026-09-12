@@ -1,0 +1,27 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Importing this repo on Render reads this file, so the service needs no manual
+# configuration. The build seeds the JSON store, which is what lets a fresh fork
+# deploy with no database account at all: .gitignore excludes server/data/*.json,
+# so without this step the deployed app would start with zero users and every
+# login would fail as though the credentials were wrong.
+#
+# To use a real database instead, set DB_DRIVER=mongo and MONGODB_URI in the
+# Render dashboard and drop the seed from buildCommand. See docs/DEPLOYMENT.html.
+services:
+  - type: web
+    name: uninest
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build && DB_DRIVER=file npm run seed
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Generated once per service and never shown to us — the published
+      # fallback in lib/auth.js must never sign a real session.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DB_DRIVER
+        value: file
