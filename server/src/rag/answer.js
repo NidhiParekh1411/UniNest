@@ -7,7 +7,8 @@ import db from '../lib/db.js';
 import { classify } from './router.js';
 import { runStructured } from './structured.js';
 import { retrieve, MIN_SCORE } from './retrieve.js';
-import { compose, providerName } from './llm.js';
+import { compose, providerName, chooseTool } from './llm.js';
+import { declarationsFor, runTool } from './records.js';
 
 const BRANCH_LABELS = { CE: 'Computer Engineering', IT: 'Information Technology', ME: 'Mechanical Engineering' };
 
@@ -36,10 +37,16 @@ function clarifyResponse(intent, missing, scope) {
   return { answer: 'I need one more detail before I can answer that accurately.', followUp: null };
 }
 
-function abstainResponse(question) {
+function abstainResponse(question, degradedReason = null) {
+  // Rule 6: a silent downgrade is the worst outcome. If the record lookup was
+  // skipped because the allowance ran out, say so — otherwise this reads as
+  // "the college has no such record" when it means "I could not go and look".
+  const suffix = degradedReason
+    ? ' I could not run a records lookup for this one either, because AI assistance is currently unavailable — try rephrasing it the way the records screens label things, or check back later.'
+    : '';
   return {
     kind: 'abstain',
-    answer: 'I could not find this in the official documents available to you, so I would rather not guess. Try naming the specific circular or policy area, or ask your department office — and if the document exists but has not been uploaded yet, an administrator can add it to the knowledge base.',
+    answer: `I could not find this in the official documents available to you, so I would rather not guess. Try naming the specific circular or policy area, or ask your department office — and if the document exists but has not been uploaded yet, an administrator can add it to the knowledge base.${suffix}`,
     data: null,
     citations: [],
     followUp: null,
@@ -85,10 +92,53 @@ export async function ask({ question, scope, history = [], overrides = {} }) {
     }
   }
 
+  // Record path. classify() reports 'records' for questions its patterns cannot
+  // express — Node first, the model only on that miss. The model chooses the
+  // query; this process runs it, scoped to the token. See records.js.
+  let toolDegraded = null;
+  if (route.kind === 'records') {
+    // A student asking a population question is refused here, before any call is
+    // spent. Answering it with their own row instead would be safe but dishonest
+    // — it looks like a reply to what they asked.
+    if (route.cohort && scope.role === 'student') {
+      return {
+        kind: 'structured',
+        answer: 'That covers other students, and your account can only see your own records. Ask about your own attendance or marks and I will pull them up.',
+        data: null,
+        citations: [],
+        followUp: null,
+        meta: { intent: null, refused: true, provider: 'records', ms: Date.now() - started },
+      };
+    }
+
+    const { call, degraded, reason } = await chooseTool(text, declarationsFor(scope), history);
+    if (degraded) toolDegraded = reason ?? 'AI assist unavailable';
+    if (call) {
+      const result = await runTool(call.name, call.args, scope);
+      if (result) {
+        return {
+          kind: 'structured',
+          answer: result.answer,
+          data: result.data ?? null,
+          citations: result.citations ?? [],
+          followUp: null,
+          meta: {
+            intent: call.name,
+            tool: call.name,
+            args: call.args,
+            refused: result.refused ?? false,
+            provider: 'records',
+            ms: Date.now() - started,
+          },
+        };
+      }
+    }
+  }
+
   // Document path.
   const { hits, top, coverage, confident } = await retrieve(text, scope, { k: 5 });
   if (!confident || !hits.length) {
-    return { ...abstainResponse(text), meta: { intent: null, topScore: Number(top.toFixed(2)), coverage: Number((coverage ?? 0).toFixed(2)), threshold: MIN_SCORE, provider: providerName(), ms: Date.now() - started } };
+    return { ...abstainResponse(text, toolDegraded), meta: { intent: null, topScore: Number(top.toFixed(2)), coverage: Number((coverage ?? 0).toFixed(2)), threshold: MIN_SCORE, provider: providerName(), degraded: Boolean(toolDegraded), degradedReason: toolDegraded, ms: Date.now() - started } };
   }
 
   const composed = await compose(text, hits, history);

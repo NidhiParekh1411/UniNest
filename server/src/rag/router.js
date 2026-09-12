@@ -112,10 +112,30 @@ export async function extractSlots(text) {
   return slots;
 }
 
+// Questions the pattern handlers cannot express: a population filter, a ranking,
+// or a per-semester breakdown. The handlers below answer about one person or one
+// cohort's schedule, so left alone they would claim "students below 75%" as a
+// personal attendance lookup and answer a question nobody asked.
+//
+// Reporting these as a miss is what makes "Node first, model on a miss" true —
+// the miss is decided here, deterministically, before anything reaches Gemini.
+const COHORT = /\b(list|which students?|who (is|are|has|have)|top \d+|bottom \d+|defaulters?|short of attendance|at risk|all (the )?students|every student|rank(ing|ed)?)\b/i;
+const OPERATOR = /\b(below|above|under|over|less than|more than|fewer than|highest|lowest|best|worst|top|bottom|each semester|semester[- ]wise|every semester)\b/i;
+
+export function isCohortQuestion(text) {
+  return COHORT.test(text);
+}
+
 export async function classify(text, scope) {
   const slots = await extractSlots(text);
   const personal = PERSONAL.test(text);
   const policy = POLICY.test(text);
+
+  // Policy framing wins: "what happens if attendance is below 75%" carries an
+  // operator but belongs to the documents, not the record tables.
+  if (!policy && (COHORT.test(text) || OPERATOR.test(text))) {
+    return { kind: 'records', intent: null, slots, cohort: COHORT.test(text), confidence: 0.8 };
+  }
 
   let best = null;
   for (const intent of INTENTS) {
