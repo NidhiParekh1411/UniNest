@@ -1,6 +1,6 @@
 # Project State — read this first
 
-**Last updated:** 5 September 2026 · **Phase 1 complete · runs with no database · UI redesigned from the owner's references**
+**Last updated:** 12 September 2026 · **Phase 1 complete · runs with no database · deployable · the assistant answers from the record tables**
 
 If you are a new session picking this up: read this file, then `CLAUDE.md`, then
 `docs/REQUIREMENTS.md`. Everything below reflects the code as it actually is, not
@@ -38,7 +38,7 @@ accounts, so no credentials need typing.
 |---|---|
 | `npm run dev` | Runs API and web together with prefixed output |
 | `npm run seed` | Wipes and regenerates every collection |
-| `npm run eval` | 26-case retrieval/routing/abstention harness |
+| `npm run eval` | 37-case retrieval/routing/abstention/record-query harness |
 | `npm run smoke` | 52-assertion end-to-end API test across all three roles (needs `npm run dev` running) |
 | `npm run build` | Production build of the frontend |
 
@@ -98,6 +98,8 @@ passages · 45 assignments · 143 submissions · 10 announcements (3 scheduled).
 | Responsive web + phone | **Done** — permanent sidebar ≥960px; below that a topbar hamburger opens a left drawer with the same nav list. The collapsible rail, the bottom tab bar and the "More" sheet were all removed | `styles/app.css`, `components/Shell.jsx` |
 | MongoDB | **Done** — every collection, indexed | `lib/db.js` |
 | Runs without a database | **Done 5 Sep 2026** — file-backed driver behind the same `db` surface, chosen automatically when Mongo is unreachable; guards against clobbering files another process changed | `lib/db.js` |
+| Record queries in chat | **Done 12 Sep 2026** — attendance and marks answered from the tables: a student's own totals, best/worst subject and per-semester breakdown; cohort filters and rankings for faculty and admin. Node reads the common shapes, Gemini reads the rest, and a student's population question is refused | `rag/records.js`, `rag/router.js`, `rag/answer.js` |
+| Deployable to a host | **Done 12 Sep 2026** — Express serves `web/dist` so the app is one origin; `render.yaml` imports with no dashboard configuration; production refuses to boot without `JWT_SECRET` | `server/src/index.js`, `render.yaml`, `docs/DEPLOYMENT.html` |
 
 ---
 
@@ -214,6 +216,62 @@ and 6 (source of truth for branch/semester) both block Phase 3 work.
 ---
 
 ## Where we left off
+
+### 12 September 2026 — the assistant answers from the record tables, and the app can be deployed
+
+Branch: `feat/render-deploy-and-record-queries`, cut from `main`. Note that
+`v2` is now fully merged and behind `main`; `CLAUDE.md` was corrected to say so.
+
+**Record queries.** The assistant previously answered structured questions only
+in the shapes `rag/structured.js` already knew — one person, one cohort's
+schedule. Anything with a filter, a ranking or a per-semester breakdown was
+claimed by the pattern router and answered wrongly: "list students with
+attendance below 75%" came back as *that professor's own* attendance, and
+"my worst subject" abstained. Three pieces fixed it:
+
+- `rag/records.js` — four typed tools (`myAttendance`, `myResults`,
+  `studentsByAttendance`, `studentsByMarks`), each declaring a Gemini-compatible
+  schema next to its executor. **Scoping lives in `runTool()`**, against the
+  token: a student resolves only to themselves, a `studentName` argument from a
+  student is discarded rather than honoured, and the cohort tools are both
+  hidden from students and refused again at call time.
+- `rag/router.js` — `classify()` now returns `kind: 'records'` for questions its
+  patterns cannot express, so the miss is decided in Node before anything
+  reaches the model. Policy framing still wins, which keeps "what happens if my
+  attendance is below 75%" on the document path.
+- `rag/answer.js` — the chain is **patterns → Gemini → fall through**.
+  `parseToolCall()` reads thresholds, rankings and per-semester breakdowns in
+  Node, so the common shapes cost none of the free tier's handful of daily
+  requests; `chooseTool()` is asked only about phrasings it cannot read.
+
+Two deliberate refusals, both rule-driven. A student asking a population
+question is told their account sees only their own records — answering with
+their own row instead would be safe but dishonest. And an unqualified
+"bottom 5" from a professor is not guessed at, because bottom by attendance and
+bottom by marks are different lists.
+
+`npm run eval` is now **37/37** (was 26 cases), including three that assert a
+student's cohort question is refused and eight that assert the common shapes
+resolve with `via: 'patterns'` — i.e. no model call. `npm run smoke` is 52/52.
+
+**Deployment.** `server/src/index.js` serves `web/dist` when it exists, so the
+deployed app is one origin and `web/src/lib/api.js` keeps its relative URLs
+untouched; in development the block is skipped and the Vite proxy still runs.
+`render.yaml` imports with no dashboard configuration and seeds the file store
+during the build, which is what lets a fork deploy with no database account —
+`server/data/*.json` is gitignored, so without that step the deployment starts
+with zero users and every login fails as though the password were wrong.
+Production now refuses to boot without `JWT_SECRET` (the fallback in
+`lib/auth.js` is published in this repo) and drops the open CORS policy.
+Full walkthrough in `docs/DEPLOYMENT.html`.
+
+**Known gap:** uploaded binaries still live on the container filesystem
+(`UPLOAD_DIR`, now overridable), so on a free instance they vanish on redeploy.
+The records and the indexed passages survive — only the original file is lost,
+which surfaces as a broken "view document" rather than a broken assistant.
+GridFS was scoped and deferred.
+
+---
 
 **4 September 2026 — the UI was rebuilt.** The app now has a public site in
 front of it and a new visual language throughout.
