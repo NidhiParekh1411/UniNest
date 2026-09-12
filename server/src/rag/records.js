@@ -351,6 +351,80 @@ export function declarationsFor(scope) {
     .map((t) => t.declaration);
 }
 
+// The deterministic reading of a record question, tried before Gemini is asked.
+//
+// It exists for two reasons. The free allowance is a handful of requests a day,
+// so spending one to learn that "below 75%" means below 75 is waste; and when
+// the allowance is gone this is the difference between answering the question
+// and confidently answering a different one out of the policy documents.
+//
+// Returns null when the question is not plainly one of these shapes, which is
+// the model's cue to try. Arguments only — whose records come back is still
+// decided by runTool() against the token.
+const PERSONAL = /\b(my|mine|i|me|myself)\b/i;
+const BELOW = /\b(?:below|under|less than|fewer than|lower than)\s*(\d{1,3})\s*(?:%|percent)?/i;
+const ABOVE = /\b(?:above|over|more than|greater than|at least)\s*(\d{1,3})\s*(?:%|percent)?/i;
+const RANKED = /\b(top|bottom|best|worst|highest|lowest)\s*(\d{1,2})?\b/i;
+const PER_SEMESTER = /\b(each|every|per)\s+semester\b|\bsemester[-\s]?wise\b/i;
+
+export function parseToolCall(text, scope) {
+  const attendance = /\battendance\b|\bpresent\b|\babsent\b/i.test(text);
+  const marks = /\bmarks?\b|\bscor\w*\b|\bresults?\b|\bgrades?\b|\bcgpa\b|\bspi\b/i.test(text);
+  const ranked = RANKED.exec(text);
+  const perSemester = PER_SEMESTER.test(text);
+  const personal = scope.role === ROLES.STUDENT || PERSONAL.test(text);
+
+  // A student's only rankable records are their marks, so "my best subject"
+  // needs no measure word to be unambiguous. "bottom 5" from a professor does —
+  // bottom by attendance and bottom by marks are different lists, and guessing
+  // between them is exactly what rule 5 forbids.
+  if (!attendance && !marks && !(personal && (ranked || perSemester))) return null;
+
+  const args = {};
+  // Branch is matched on the raw text: lowercased, "it" and "me" are ordinary
+  // English words and would tag half the questions with a branch.
+  const branch = text.match(/\b(CE|IT|ME)\b/);
+  if (branch) args.branch = branch[1];
+  const sem = text.match(/\bsem(?:ester)?\.?\s*(\d)\b/i) ?? text.match(/\b(\d)(?:st|nd|rd|th)\s+sem/i);
+  if (sem) args.semester = Number(sem[1]);
+  if (/\bmid\s?sem|\bmid[-\s]?term|\binternal\b/i.test(text)) args.examType = 'midsem';
+  else if (/\bfinal|\bend\s?sem|\bexternal\b/i.test(text)) args.examType = 'final';
+
+  const below = BELOW.exec(text);
+  const above = ABOVE.exec(text);
+
+  // A student only ever asks about themselves, so personal framing is assumed
+  // rather than required — "highest mark" from a student needs no "my".
+  if (personal) {
+    if (attendance) return { name: 'myAttendance', args: {} };
+    if (perSemester) return { name: 'myResults', args: { ...args, groupBySemester: true } };
+    if (ranked) {
+      const word = ranked[1].toLowerCase();
+      if (['top', 'best', 'highest'].includes(word)) return { name: 'myResults', args: { ...args, extreme: 'highest' } };
+      return { name: 'myResults', args: { ...args, extreme: 'lowest' } };
+    }
+    return { name: 'myResults', args };
+  }
+
+  if (attendance) {
+    if (below) return { name: 'studentsByAttendance', args: { ...args, comparator: 'below', percentage: Number(below[1]) } };
+    if (above) return { name: 'studentsByAttendance', args: { ...args, comparator: 'above', percentage: Number(above[1]) } };
+    if (/\bdefaulters?\b|\bshort of attendance\b|\bat risk\b/i.test(text)) {
+      return { name: 'studentsByAttendance', args: { ...args, comparator: 'below', percentage: 75 } };
+    }
+    return null;
+  }
+
+  if (below) return { name: 'studentsByMarks', args: { ...args, comparator: 'below', percentage: Number(below[1]) } };
+  if (above) return { name: 'studentsByMarks', args: { ...args, comparator: 'above', percentage: Number(above[1]) } };
+  if (ranked) {
+    const word = ranked[1].toLowerCase();
+    const order = ['top', 'best', 'highest'].includes(word) ? 'top' : 'bottom';
+    return { name: 'studentsByMarks', args: { ...args, order, limit: ranked[2] ? Number(ranked[2]) : 10 } };
+  }
+  return null;
+}
+
 export async function runTool(name, args, scope) {
   const tool = TOOLS[name];
   if (!tool) return null;

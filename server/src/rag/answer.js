@@ -8,7 +8,7 @@ import { classify } from './router.js';
 import { runStructured } from './structured.js';
 import { retrieve, MIN_SCORE } from './retrieve.js';
 import { compose, providerName, chooseTool } from './llm.js';
-import { declarationsFor, runTool } from './records.js';
+import { declarationsFor, runTool, parseToolCall } from './records.js';
 
 const BRANCH_LABELS = { CE: 'Computer Engineering', IT: 'Information Technology', ME: 'Mechanical Engineering' };
 
@@ -111,8 +111,17 @@ export async function ask({ question, scope, history = [], overrides = {} }) {
       };
     }
 
-    const { call, degraded, reason } = await chooseTool(text, declarationsFor(scope), history);
-    if (degraded) toolDegraded = reason ?? 'AI assist unavailable';
+    // Node reads the question first. Only a shape it cannot parse costs one of
+    // the day's small allowance of model calls.
+    let call = parseToolCall(text, scope);
+    let via = 'patterns';
+    if (!call) {
+      const chosen = await chooseTool(text, declarationsFor(scope), history);
+      if (chosen.degraded) toolDegraded = chosen.reason ?? 'AI assist unavailable';
+      call = chosen.call;
+      via = 'gemini';
+    }
+
     if (call) {
       const result = await runTool(call.name, call.args, scope);
       if (result) {
@@ -128,6 +137,7 @@ export async function ask({ question, scope, history = [], overrides = {} }) {
             args: call.args,
             refused: result.refused ?? false,
             provider: 'records',
+            via,
             ms: Date.now() - started,
           },
         };
