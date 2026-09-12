@@ -9,6 +9,7 @@ import { runStructured } from './structured.js';
 import { retrieve, MIN_SCORE } from './retrieve.js';
 import { compose, providerName, chooseTool } from './llm.js';
 import { declarationsFor, runTool, parseToolCall } from './records.js';
+import { detectAction, prepareAction } from './actions.js';
 
 const BRANCH_LABELS = { CE: 'Computer Engineering', IT: 'Information Technology', ME: 'Mechanical Engineering' };
 
@@ -57,6 +58,26 @@ export async function ask({ question, scope, history = [], overrides = {} }) {
   const started = Date.now();
   const text = (question ?? '').trim();
   if (!text) throw new Error('Question is required');
+
+  // Actions come first: an imperative is unambiguous in a way a question is not,
+  // and "create an assignment" should never be answered with the assignment
+  // policy. Detection is a verb plus its object, so it costs nothing and cannot
+  // fire on "what assignments are pending".
+  const actionName = detectAction(text, scope);
+  if (actionName) {
+    const prepared = await prepareAction(actionName, text, scope);
+    if (prepared) {
+      return {
+        kind: prepared.action ? 'action' : 'structured',
+        answer: prepared.answer,
+        data: null,
+        action: prepared.action ?? null,
+        citations: [],
+        followUp: null,
+        meta: { intent: actionName, action: actionName, provider: 'records', via: 'patterns', ms: Date.now() - started },
+      };
+    }
+  }
 
   const route = await classify(text, scope);
   const slots = { ...route.slots, ...overrides };
