@@ -3,7 +3,7 @@ import api from '../lib/api.js';
 import { useAuth } from '../lib/auth.jsx';
 import Icon from '../components/Icon.jsx';
 import Logo, { Mascot } from '../components/Logo.jsx';
-import { Badge, Button } from '../components/ui.jsx';
+import { Badge, Button, Field, Note } from '../components/ui.jsx';
 import { Ring } from '../components/Charts.jsx';
 import { attendanceTone, formatDate, relative } from '../lib/format.js';
 
@@ -13,6 +13,7 @@ const SUGGEST_ICONS = new Set(['calendar', 'chart', 'doc', 'sparkle', 'megaphone
 const suggestIcon = (name) => (SUGGEST_ICONS.has(name) ? name : 'doc');
 
 const KIND_LABEL = {
+  action: ['sparkle', 'Ready when you confirm'],
   structured: ['grid', 'From your records'],
   document: ['doc', 'From official documents'],
   clarify: ['alert', 'Needs one detail'],
@@ -23,6 +24,156 @@ const KIND_LABEL = {
    A record answer is a sentence plus the actual data. Rendering the table or
    the chart inline is the difference between being told your attendance is low
    and being shown which subjects are dragging it down. */
+
+/* ------------------------------------------------------------------- actions
+   The assistant proposes; the user commits. Every card below is pre-filled from
+   the question and does nothing until Confirm is pressed, and each one posts to
+   the same endpoint its screen uses — so the server-side role checks are the
+   ones that already exist, and chat never becomes a second way in. */
+
+const ACTION_SUBMIT = {
+  createAssignment: (v) => api.createAssignment({
+    subjectId: v.subjectId, title: v.title, description: v.description,
+    dueDate: v.dueDate, maxMarks: Number(v.maxMarks) || 10,
+  }).then((r) => `Created “${r.assignment.title}”, due ${formatDate(r.assignment.dueDate)}.`),
+
+  submitAssignment: (v) => {
+    const fd = new FormData();
+    fd.append('file', v.file);
+    if (v.note) fd.append('note', v.note);
+    // The server's own message is used rather than a local one: it is the thing
+    // that knows whether this counted as late.
+    return api.submitAssignment(v.assignmentId, fd).then((r) => r.message);
+  },
+
+  createAnnouncement: (v) => api.createAnnouncement({
+    title: v.title, body: v.body, audience: v.audience,
+    branch: v.branch, publishAt: v.publishAt || undefined,
+  }).then((r) => r.message),
+
+  generateQuestionBank: (v) => api.generateQuestionBank({
+    documentId: v.documentId, subjectId: v.subjectId || null,
+    count: Number(v.count) || 12, difficulty: v.difficulty,
+    // Carries the offline-draft caveat when no model was available, which the
+    // reader needs in order to judge how much editing the draft wants.
+  }).then((r) => `${r.message} ${r.bank.questions?.length ?? 0} questions are in the draft — open Question Banks to review and publish.`),
+};
+
+function ActionField({ field, value, onChange }) {
+  const id = `act-${field.name}`;
+  const common = { id, className: 'input', value: value ?? '', onChange: (e) => onChange(field.name, e.target.value) };
+  return (
+    <Field label={field.label} hint={field.hint} id={id}>
+      {field.type === 'select' ? (
+        <select {...common} className="select">
+          {field.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      ) : field.type === 'textarea' ? (
+        <textarea {...common} className="textarea" rows={3} placeholder={field.placeholder} />
+      ) : field.type === 'file' ? (
+        <input id={id} className="input" type="file" accept={field.accept}
+          onChange={(e) => onChange(field.name, e.target.files?.[0] ?? null)} />
+      ) : (
+        <input {...common} type={field.type} placeholder={field.placeholder} />
+      )}
+    </Field>
+  );
+}
+
+function ActionCard({ action, onDone }) {
+  const [values, setValues] = useState(() => Object.fromEntries((action.fields ?? []).map((f) => [f.name, f.value ?? ''])));
+  const [grades, setGrades] = useState(() => Object.fromEntries((action.rows ?? []).map((r) => [r.submissionId, { marks: '', feedback: '' }])));
+  const [state, setState] = useState({ busy: false, error: null, done: null });
+
+  const set = (name, v) => setValues((prev) => ({ ...prev, [name]: v }));
+
+  const submit = async () => {
+    setState({ busy: true, error: null, done: null });
+    try {
+      if (action.name === 'gradeSubmissions') {
+        // Only the rows actually filled in are sent — a half-finished list is a
+        // normal way to work through marking, not an error.
+        const entries = Object.entries(grades).filter(([, g]) => g.marks !== '');
+        if (!entries.length) throw new Error('Enter marks for at least one submission.');
+        for (const [id, g] of entries) {
+          await api.gradeSubmission(id, { marks: Number(g.marks), feedback: g.feedback || '' });
+        }
+        setState({ busy: false, error: null, done: `Graded ${entries.length} submission${entries.length === 1 ? '' : 's'}.` });
+        onDone?.();
+        return;
+      }
+      const missing = (action.fields ?? []).find((f) => f.required && !values[f.name]);
+      if (missing) throw new Error(`${missing.label} is required.`);
+      const message = await ACTION_SUBMIT[action.name](values);
+      setState({ busy: false, error: null, done: message });
+      onDone?.();
+    } catch (err) {
+      setState({ busy: false, error: err.message, done: null });
+    }
+  };
+
+  if (state.done) {
+    return (
+      <div className="chat-data">
+        <div style={{ padding: 'var(--s5)' }}>
+          <Note tone="ok" icon="check">{state.done}</Note>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="chat-data">
+      <div className="chat-data-head row-between">
+        <span className="eyebrow">{action.title}</span>
+        {action.rows && <Badge tone="peach">{action.rows.length} waiting</Badge>}
+      </div>
+      <div style={{ padding: 'var(--s5)' }}>
+        {action.fields?.map((f) => (
+          <ActionField key={f.name} field={f} value={values[f.name]} onChange={set} />
+        ))}
+
+        {action.rows && (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr><th>Student</th><th>Assignment</th><th style={{ textAlign: 'right' }}>Marks</th><th>Feedback</th></tr>
+              </thead>
+              <tbody>
+                {action.rows.map((r) => (
+                  <tr key={r.submissionId}>
+                    <td className="cell-strong">{r.student}{r.late && <> <Badge tone="bad">Late</Badge></>}</td>
+                    <td className="muted">{r.assignment}</td>
+                    <td className="cell-num" style={{ whiteSpace: 'nowrap' }}>
+                      <input className="input input-inline" type="number" min="0" max={r.maxMarks}
+                        value={grades[r.submissionId].marks}
+                        onChange={(e) => setGrades((p) => ({ ...p, [r.submissionId]: { ...p[r.submissionId], marks: e.target.value } }))} />
+                      <span className="muted"> / {r.maxMarks}</span>
+                    </td>
+                    <td>
+                      <input className="input input-inline" type="text" placeholder="Optional"
+                        value={grades[r.submissionId].feedback}
+                        onChange={(e) => setGrades((p) => ({ ...p, [r.submissionId]: { ...p[r.submissionId], feedback: e.target.value } }))} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {action.note && <p className="field-hint" style={{ marginTop: 'var(--s3)' }}>{action.note}</p>}
+        {state.error && <div style={{ marginTop: 'var(--s3)' }}><Note tone="bad" icon="alert">{state.error}</Note></div>}
+
+        <div className="row-end" style={{ gap: 'var(--s3)', marginTop: 'var(--s5)' }}>
+          <Button variant="primary" onClick={submit} disabled={state.busy}>
+            {state.busy ? 'Working…' : action.submitLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function DataBlock({ data }) {
   if (!data) return null;
@@ -273,6 +424,8 @@ function AssistantMessage({ message }) {
 
         <DataBlock data={message.data} />
 
+        {message.action && <ActionCard action={message.action} />}
+
         {message.citations?.length > 0 && (
           <div className="citations">
             {message.citations.map((c, i) => (
@@ -476,6 +629,7 @@ export default function Assistant() {
         data: res.data,
         citations: res.citations,
         followUp: res.followUp,
+        action: res.action ?? null,
       }]);
     } catch (err) {
       setMessages((m) => [...m, {
@@ -503,7 +657,7 @@ export default function Assistant() {
         setConversationId(res.conversationId);
         setMessages((m) => [...m, {
           role: 'assistant', id: Math.random().toString(36).slice(2),
-          text: res.answer, kind: res.kind, data: res.data, citations: res.citations, followUp: res.followUp,
+          text: res.answer, kind: res.kind, data: res.data, citations: res.citations, followUp: res.followUp, action: res.action ?? null,
         }]);
       })
       .catch((err) => setMessages((m) => [...m, { role: 'assistant', id: Math.random().toString(36).slice(2), text: err.message, kind: 'abstain', citations: [] }]))

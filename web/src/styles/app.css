@@ -23,6 +23,7 @@
 .stack { display: flex; flex-direction: column; gap: var(--s4); }
 .row { display: flex; align-items: center; gap: var(--s3); }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
+.row-end { display: flex; align-items: center; justify-content: flex-end; gap: var(--s3); }
 .wrap { flex-wrap: wrap; }
 .grow { flex: 1; min-width: 0; }
 .center { text-align: center; }
@@ -186,6 +187,9 @@
   background-repeat: no-repeat; background-position: right var(--s3) center;
 }
 .input::placeholder, .textarea::placeholder { color: var(--text-3); }
+/* Sits inside a table cell — a marks box beside its total, a one-line note.
+   Narrow enough that a grading row stays one line at reading width. */
+.input-inline { width: auto; max-width: 148px; min-height: 36px; padding: 5px var(--s3); font-size: var(--fs-sm); }
 .input:focus, .select:focus, .textarea:focus {
   outline: none;
   border-color: var(--ink);
