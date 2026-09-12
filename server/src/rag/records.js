@@ -119,6 +119,7 @@ export const TOOLS = {
 
       const subjects = await lookup('subjects', rows.map((r) => r.subjectId));
       const bySubject = rows.map((r) => ({
+        subjectId: r.subjectId,
         subject: subjects.get(r.subjectId)?.name ?? 'this subject',
         code: subjects.get(r.subjectId)?.code ?? '',
         attended: r.attended,
@@ -222,6 +223,7 @@ export const TOOLS = {
 
       const subjects = await lookup('subjects', rows.map((r) => r.subjectId));
       const enriched = rows.map((r) => ({
+        id: r.id,
         subject: subjects.get(r.subjectId)?.name ?? 'this subject',
         code: subjects.get(r.subjectId)?.code ?? '',
         semester: r.semester,

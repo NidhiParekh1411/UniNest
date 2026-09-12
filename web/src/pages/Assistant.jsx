@@ -104,6 +104,69 @@ function DataBlock({ data }) {
     );
   }
 
+  /* A cohort answer. The sentence names the count and the extreme; the table is
+     where a professor actually works, so it carries the enrolment number they
+     need to act on. Status lives on the badge only — painting the row by
+     threshold makes a screen where most rows are fine read as one colour. */
+  if (data.type === 'studentTable') {
+    const marks = data.measure === 'marks';
+    const tone = (p) => (marks ? (p >= 60 ? 'ok' : p >= 40 ? 'warn' : 'bad') : attendanceTone(p));
+    return (
+      <div className="chat-data">
+        <div className="chat-data-head row-between">
+          <span className="eyebrow">{marks ? 'By marks' : 'By attendance'}</span>
+          <Badge tone="sky">{data.rows.length} student{data.rows.length === 1 ? '' : 's'}</Badge>
+        </div>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Enrolment</th>
+                <th>Sem</th>
+                <th style={{ textAlign: 'right' }}>{marks ? 'Marks' : 'Attended'}</th>
+                <th style={{ textAlign: 'right' }}>%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.rows.map((r) => (
+                <tr key={r.enrollment || r.name}>
+                  <td className="cell-strong">{r.name}</td>
+                  <td className="mono">{r.enrollment}</td>
+                  <td className="cell-num">{r.branch} {r.semester}</td>
+                  <td className="cell-num">{marks ? `${r.marks}/${r.maxMarks}` : `${r.attended}/${r.total}`}</td>
+                  <td className="cell-num"><Badge tone={tone(r.percent)}>{r.percent}%</Badge></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  if (data.type === 'semesterTable') {
+    return (
+      <div className="chat-data">
+        <div className="chat-data-head"><span className="eyebrow">By semester</span></div>
+        <div className="table-wrap">
+          <table className="table">
+            <thead><tr><th>Semester</th><th style={{ textAlign: 'right' }}>Marks</th><th style={{ textAlign: 'right' }}>%</th></tr></thead>
+            <tbody>
+              {data.rows.map((r) => (
+                <tr key={r.semester}>
+                  <td className="cell-strong">Semester {r.semester}</td>
+                  <td className="cell-num">{r.marks}/{r.maxMarks}</td>
+                  <td className="cell-num">{r.percent}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   if (data.type === 'subjects') {
     return (
       <div className="chat-data">
